@@ -22,6 +22,7 @@ dataset sendiri tanpa bercampur — mis. `datasets.yml` untuk layer gold,
 | Menambah kredensial SQL Server (dimensi 9) | `.env`, variabel `SQLSERVER_*` |
 | Mengaktifkan rekonsiliasi ke SQL Server | `datasets.yml`, blok `sumber.sql_server:` |
 | Menambah dataset di layer lain (bronze, dst) | file config baru, mis. `bronze_datasets.yml` |
+| Menambah/mengubah notifikasi email kegagalan | `.env`, variabel `SMTP_*` |
 | Menambah **jenis** pemeriksaan baru | `dqcore/checks.py` — jarang perlu |
 
 **Folder `dqcore/` tidak perlu disentuh untuk menambah dataset.** Itu mesinnya.
@@ -99,6 +100,7 @@ python validate.py --dataset ars --sweep     # semua partisi, ringkasan per part
 python validate.py --all                     # semua dataset sekaligus
 python validate.py --dataset ars --open-docs # buka laporan HTML di browser
 python validate.py --dataset ars --no-reconcile   # lewati dimensi 9 (tanpa VPN/akses SQL Server)
+python validate.py --dataset ars --no-email       # lewati notifikasi email untuk kegagalan
 
 # Layer lain (config terpisah, mis. bronze):
 python validate.py --config bronze_datasets.yml --dataset iot_wm_transaction --source s3
@@ -294,6 +296,74 @@ sumber:
 `offset_jam` WAJIB disamakan dengan window WHERE clause job ingest yang
 sebenarnya (lihat `jobs.py` Fase 1) — kalau beda, row count SQL Server vs
 bronze tidak akan pernah cocok meski datanya benar.
+
+---
+
+## Notifikasi Email
+
+Kegagalan validasi (blocking **maupun** warning) bisa memicu email otomatis lewat
+`EmailAction` bawaan Great Expectations, dipasang di `dqcore/docs.py`. Dilewati
+otomatis kalau `.env` belum lengkap, atau dengan `--no-email`.
+
+Tambahkan ke `.env` di folder ini:
+
+```
+SMTP_HOST=smtp.namaperusahaan.com
+SMTP_PORT=465
+SMTP_LOGIN=alamat-pengirim@namaperusahaan.com
+SMTP_PASSWORD=PASSWORD_ATAU_APP_PASSWORD
+SMTP_SENDER_ALIAS=Data Quality Alert <alamat-pengirim@namaperusahaan.com>
+SMTP_RECEIVER_EMAILS=penerima1@namaperusahaan.com,penerima2@namaperusahaan.com
+SMTP_USE_SSL=true
+SMTP_USE_TLS=false
+```
+
+`SMTP_HOST`, `SMTP_PORT`, dan `SMTP_RECEIVER_EMAILS` wajib diisi (lainnya opsional,
+tapi hampir semua server SMTP nyata butuh `SMTP_LOGIN`/`SMTP_PASSWORD`).
+`SMTP_RECEIVER_EMAILS` boleh lebih dari satu alamat, pisahkan dengan koma. Pilih
+**salah satu** `SMTP_USE_SSL`/`SMTP_USE_TLS` sesuai providernya (SSL biasanya
+port 465, TLS port 587 — umum di setup Office 365/Gmail).
+
+**`SMTP_SENDER_ALIAS` WAJIB alamat email valid** (boleh format
+`"Nama Tampilan <alamat@domain>"`), bukan sekadar label bebas — GX memakainya
+langsung sebagai envelope `MAIL FROM` *dan* header `From` ke server SMTP.
+Mengisinya dengan teks biasa (mis. `Data Quality Alert` saja, tanpa `<...>`)
+membuat server SMTP menolak dengan `501 Sender address is invalid` — email
+tidak terkirim TANPA validate.py melaporkan error apa pun (gagalnya tercatat
+lewat logger internal GX, bukan dicetak ke terminal). Kosongkan baris ini
+kalau tidak perlu nama tampilan khusus — GX otomatis memakai `SMTP_LOGIN`.
+
+Dua hal yang perlu diketahui:
+1. **Terkirim untuk kegagalan APA PUN**, bukan hanya blocking — kegagalan warning
+   ringan (mis. satu outlier z-score) juga memicu email. GX 1.19 sebenarnya punya
+   field `severity` native per-expectation (`CRITICAL`/`WARNING`/`INFO`, terpisah
+   dari `meta['severity']` kita) yang bisa dipakai untuk mempersempit ke blocking
+   saja (`notify_on="critical"`) — belum diaktifkan di sini karena defaultnya
+   dipilih mengirim untuk semua kegagalan.
+2. **Bisa terkirim dua email terpisah per run**, bukan satu email gabungan.
+   Dimensi 1 (Schema) & 9 (Rekonsiliasi Sumber) berjalan di Checkpoint
+   `cp_<dataset>_schema`, dimensi lainnya di `cp_<dataset>_kualitas` — kalau
+   keduanya gagal dalam run yang sama, masing-masing checkpoint mengirim
+   emailnya sendiri.
+
+Kegagalan mengirim (SMTP tidak terjangkau, kredensial salah, dsb.) dicatat lewat
+logger internal GX, **tidak** menghentikan `validate.py` maupun pembuatan Data
+Docs — sama seperti pola dimensi 9 saat SQL Server tidak terjangkau.
+
+### Format email — ringkasan eksekutif, bukan dump teknis GX
+
+Isi email BUKAN tampilan mentah bawaan `EmailAction` (yang menampilkan istilah
+teknis GX: nama Python expectation, `run_id`, `batch_id`). `dqcore/email_renderer.py`
+punya renderer kustom (`LaporanEksekutifRenderer`) yang membaca description/
+kategori/catatan yang sama dipakai `reports/*.md`, disusun jadi: badge VERDIKT
+berwarna, baris statistik (jumlah aturan/lolos/blocking/warning), lalu tabel
+temuan blocking & warning terpisah (dibatasi 15 per severity — sisanya disebut
+jumlahnya, mengarahkan ke laporan lengkap). Untuk mengganti tampilannya lebih
+jauh, edit `LaporanEksekutifRenderer` — jangan tambahkan parameter constructor
+apa pun ke kelas itu (lihat docstring-nya): Checkpoint & action-nya disimpan GX
+sebagai JSON dan direkonstruksi ulang tanpa argumen apa pun, jadi renderer harus
+menebak dataset & checkpoint (skema/kualitas) dari `checkpoint_result` saat
+`render()` dipanggil, bukan dari state yang disuntikkan lewat `__init__`.
 
 ---
 

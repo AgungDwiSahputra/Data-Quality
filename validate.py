@@ -167,7 +167,7 @@ def jalankan_dataset(spec, args, now) -> int:
         print("\nMembangun Data Docs (situs HTML bawaan Great Expectations) ...")
         try:
             d = docs_mod.bangun(hasil, df_raw, df_work, spec.nama, HERE,
-                                buka=args.open_docs)
+                                buka=args.open_docs, kirim_email=not args.no_email)
             print(f"  {d['suites']} suite, {d['lolos']}/{d['total']} expectation lolos")
             for u in d["urls"]:
                 print(f"  Data Docs HTML   : {u}")
@@ -204,6 +204,9 @@ def main():
     ap.add_argument("--no-reconcile", action="store_true",
                     help="lewati dimensi 9 (rekonsiliasi row count & skema ke SQL "
                          "Server) — dipakai saat tidak ada akses jaringan/VPN ke server")
+    ap.add_argument("--no-email", action="store_true",
+                    help="lewati notifikasi email untuk kegagalan — dipakai untuk "
+                         "backfill/percobaan yang tidak perlu memicu notifikasi")
     ap.add_argument("--open-docs", action="store_true",
                     help="buka situs Data Docs di browser setelah selesai")
     ap.add_argument("--reset-docs", action="store_true",

@@ -31,6 +31,62 @@ def _nama_suite(dataset: str, kategori: str) -> str:
     return f"{dataset}_{slug}"
 
 
+def _buat_email_action():
+    """
+    EmailAction bawaan Great Expectations, dengan renderer KUSTOM
+    (LaporanEksekutifRenderer, format ringkasan eksekutif) — dibuat HANYA
+    kalau ketiga variabel wajib (SMTP_HOST, SMTP_PORT, SMTP_RECEIVER_EMAILS)
+    terisi di .env. Tanpa itu, kembalikan None dan validate.py berjalan
+    seperti biasa tanpa notifikasi — sama seperti pola --source s3 /
+    dimensi 9 yang melewati fitur opsional bila kredensialnya belum diisi.
+
+    SATU instance dipakai bersama untuk cp_<dataset>_schema maupun
+    cp_<dataset>_kualitas (lihat bangun()) — aman karena
+    LaporanEksekutifRenderer stateless, ia menebak dataset & label
+    checkpoint dari checkpoint_result saat render() dipanggil, bukan dari
+    apa pun yang disimpan di instance ini. Lihat docstring
+    LaporanEksekutifRenderer untuk alasan kenapa TIDAK boleh diberi
+    parameter constructor (checkpoint disimpan sebagai JSON dan
+    direkonstruksi ulang oleh GX tanpa argumen apa pun).
+
+    notify_on="failure": email terkirim untuk KEGAGALAN APA PUN (blocking
+    maupun warning), bukan hanya kegagalan blocking. Kalau nanti mau
+    dipersempit ke blocking saja, GX 1.19 punya field severity NATIVE per
+    expectation (great_expectations.expectations.metadata_types.
+    FailureSeverity.CRITICAL/WARNING/INFO, default CRITICAL) yang terpisah
+    dari meta['severity'] kita sendiri — expectation.severity perlu diset
+    eksplisit di Runner.check() dulu, lalu notify_on diarahkan ke
+    "critical".
+    """
+    from great_expectations.checkpoint import EmailAction
+
+    from .email_renderer import LaporanEksekutifRenderer
+
+    host = os.environ.get("SMTP_HOST")
+    port = os.environ.get("SMTP_PORT")
+    penerima = os.environ.get("SMTP_RECEIVER_EMAILS")
+    if not (host and port and penerima):
+        return None
+
+    def _bool(nama, default=None):
+        nilai = os.environ.get(nama)
+        return default if nilai is None else nilai.strip().lower() in ("1", "true", "yes")
+
+    return EmailAction(
+        name="kirim_email_kegagalan",
+        notify_on="failure",
+        smtp_address=host,
+        smtp_port=port,
+        receiver_emails=penerima,
+        sender_login=os.environ.get("SMTP_LOGIN"),
+        sender_password=os.environ.get("SMTP_PASSWORD"),
+        sender_alias=os.environ.get("SMTP_SENDER_ALIAS"),
+        use_tls=_bool("SMTP_USE_TLS"),
+        use_ssl=_bool("SMTP_USE_SSL", default=True),
+        renderer=LaporanEksekutifRenderer(),
+    )
+
+
 def reset_riwayat(docs_root: str, dataset: str | None = None) -> dict:
     """
     Kosongkan riwayat hasil validasi supaya index.html kembali bersih.
@@ -85,13 +141,17 @@ def reset_riwayat(docs_root: str, dataset: str | None = None) -> dict:
 
 
 def bangun(results, df_raw, df_work, dataset: str, docs_root: str,
-           buka: bool = False) -> dict:
+           buka: bool = False, kirim_email: bool = True) -> dict:
     """
     Bangun/perbarui situs Data Docs dari expectation yang sudah dijalankan.
 
-    Dimensi SCHEMA divalidasi terhadap dataframe ASLI, tujuh dimensi lain
-    terhadap dataframe kerja (yang punya kolom bantu turunan). Karena satu
-    Checkpoint hanya menerima satu dataframe, keduanya dijalankan terpisah.
+    Dimensi SCHEMA (+ REKONSILIASI SUMBER) divalidasi terhadap dataframe ASLI
+    lewat Checkpoint cp_<dataset>_schema, dimensi lainnya terhadap dataframe
+    kerja lewat cp_<dataset>_kualitas. Karena satu Checkpoint hanya menerima
+    satu dataframe, keduanya dijalankan terpisah — konsekuensinya, kalau
+    KEDUANYA gagal dalam satu run, EmailAction (lihat _buat_email_action())
+    terpasang di kedua Checkpoint dan bisa mengirim SAMPAI DUA email terpisah
+    untuk satu run yang sama, bukan satu email gabungan.
     """
     from great_expectations.checkpoint import Checkpoint, UpdateDataDocsAction
     from great_expectations.core.expectation_suite import ExpectationSuite
@@ -142,6 +202,11 @@ def bangun(results, df_raw, df_work, dataset: str, docs_root: str,
         (vd_raw if is_raw else vd_work).append(vd)
 
     aksi = [UpdateDataDocsAction(name="perbarui_data_docs")]
+    if kirim_email:
+        email_action = _buat_email_action()
+        if email_action:
+            aksi.append(email_action)
+
     dijalankan = []
     if vd_raw:
         cp = ctx.checkpoints.add_or_update(Checkpoint(
