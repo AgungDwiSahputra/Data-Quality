@@ -183,18 +183,47 @@ python validate.py --list       # jalan tanpa .env sama sekali (dataset lokal)
 
 | Dimensi | Diaktifkan oleh | Contoh yang ditangkap |
 |---|---|---|
-| **1. Schema** | `kolom:` | urutan kolom bergeser, tipe berubah, kolom asing |
+| **1. Schema** | `kolom:` | kolom hilang/berganti nama, tipe data bergeser (schema evolution), kolom asing muncul |
 | **2. Volume** | otomatis | data hilang sebagian, pemuatan ganda |
 | **3. Freshness** | `kunci.waktu` | data basi, timestamp masa depan, jam bolong |
 | **4. Missingness** | `wajib:` | null mendadak, string kosong tersembunyi |
 | **5. Uniqueness** | `kunci.surrogate`, `kunci.bisnis` | duplikat kunci bisnis, duplikat per jam |
-| **6. Integrity** | `referensi:`, `relasi:`, `flag_dq:` | kode tak dikenal, mapping bergeser, flag DQ bohong |
+| **6. Integrity** | `referensi:`, `relasi:`, `sama_nilai:`, `urutan_waktu:`, `flag_dq:` | kode tak dikenal, mapping bergeser, tanggal kirim terjadi sebelum tanggal pesan |
 | **7. Distribution** | `profil_distribusi:` | sensor macet, pergeseran level, bentuk sebaran berubah |
-| **8. Unstructured** | `kolom:` (string) | format ID menyimpang, karakter kontrol, mojibake |
+| **8. Data Cleanliness & Encoding** | `kolom:` (string) | format ID menyimpang, karakter kontrol, mojibake dari konversi kolasi SQL Server -> UTF-8 |
 | **9. Rekonsiliasi Sumber** | `sumber.sql_server.tabel:` | baris tercecer/terduplikasi saat pindah ke bronze, kolom sumber yang tidak terbawa |
 
 Dimensi yang tidak punya bahan **dilewati dan dicatat alasannya** — tidak pernah
 terlihat seperti lulus.
+
+Dimensi 1 **sengaja tidak memeriksa urutan kolom**. Parquet bersifat read-by-name
+(nama kolom tersimpan di metadata file, dibaca berdasarkan nama oleh Spark/Athena/
+pandas/dst) — berbeda dari CSV yang memang rawan salah baca kalau urutan bergeser.
+Menegakkan urutan di sini hanya akan menghasilkan kegagalan blocking palsu (mis.
+setelah scaffold.py dijalankan ulang) tanpa konsumen mana pun yang benar-benar
+rusak. Fokusnya sebaliknya ke **schema evolution**: kolom yang hilang/berganti
+nama, kolom asing yang muncul, dan — yang paling berbahaya karena diam-diam —
+tipe data sebuah kolom yang bergeser walau namanya tetap sama (mis. kolom INT di
+sumber tiba-tiba terbaca STRING di bronze).
+
+Dimensi 6 murni bicara **hubungan antar data** — dua kategori: *Referential
+Integrity* (`referensi:`, `relasi:` — nilai/pemetaan kode valid terhadap master)
+dan *Business Logic Consistency* (`sama_nilai:`, `urutan_waktu:`, dan `flag_dq:`
+varian `kolom:`/`aturan:` — kolom-kolom yang secara bisnis wajib selaras, mis.
+tanggal kirim tidak boleh sebelum tanggal pesan). Entri `flag_dq:` varian
+`kolom:`/`aturan:` di sini bukan "audit kejujuran flag DQ" — itu cuma satu bentuk
+Business Logic Consistency: flag boolean yang wajib sinkron dengan kondisi pada
+kolom lain. Varian `flag_dq:` yang lain (`harus:` — nilai konstan sepanjang
+partisi) tetap di dimensi **5. Uniqueness**, karena itu memang mengaudit
+keseragaman sinyal QA dari pipeline hulu, bukan relasi antar kolom.
+
+Dimensi 8 **berganti nama** dari "Unstructured (Data)" menjadi **Data Cleanliness &
+Encoding** — nama lama menyesatkan, karena data tujuan berformat Parquet yang
+tabular/terstruktur, bukan data tak terstruktur (free text, log, gambar). Pemicu
+checknya tidak berubah: mendeteksi pola string yang menyimpang, panjang di luar
+kebiasaan, karakter kotor (`POLA_KOTOR` di `dqcore/checks.py`), dan yang paling
+sering terjadi — mojibake akibat konversi kolasi SQL Server 2012 (biasanya
+`SQL_Latin1_General`) ke UTF-8 saat data dipindahkan ke S3.
 
 Dimensi 9 berbeda dari delapan lainnya: nilai pembandingnya (row count, daftar
 kolom) diambil **langsung dari SQL Server** saat validasi berjalan, bukan dari

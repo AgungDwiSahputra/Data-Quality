@@ -35,8 +35,8 @@
 #
 # Dua dimensi TETAP otomatis aktif walau tidak diminta, karena bawaan mesin
 # (bukan sesuatu yang ditambahkan lewat konfigurasi per dataset):
-#   - 2. VOLUME        koridor jumlah baris (tidak bisa dimatikan per dataset)
-#   - 8. UNSTRUCTURED  pola/panjang/karakter kotor untuk SETIAP kolom string
+#   - 2. VOLUME                       koridor jumlah baris (tidak bisa dimatikan per dataset)
+#   - 8. DATA CLEANLINESS & ENCODING  pola/panjang/karakter kotor untuk SETIAP kolom string
 #
 # Dimensi 9 BUTUH koneksi live ke SQL Server (pyodbc + ODBC Driver 17,
 # kredensial SQLSERVER_HOST/DB/UID/PWD di .env folder ini — lihat

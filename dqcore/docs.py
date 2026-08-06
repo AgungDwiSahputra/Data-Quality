@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import copy
 import os
+import re
 import shutil
 
 import great_expectations as gx
@@ -23,7 +24,11 @@ from .checks import CATEGORIES
 
 
 def _nama_suite(dataset: str, kategori: str) -> str:
-    return f"{dataset}_{kategori.lower().replace('.', '').replace(' ', '_')}"
+    # Slug generik: setiap runtun karakter non-alfanumerik (spasi, titik, '&',
+    # dst.) jadi satu underscore, supaya nama kategori bebas dipakai sebagai
+    # nama suite/berkas tanpa harus menghindari karakter tertentu.
+    slug = re.sub(r"[^a-z0-9]+", "_", kategori.lower()).strip("_")
+    return f"{dataset}_{slug}"
 
 
 def reset_riwayat(docs_root: str, dataset: str | None = None) -> dict:

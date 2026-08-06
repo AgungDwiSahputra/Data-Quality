@@ -5,14 +5,17 @@ KODE INTI. Jarang perlu disentuh.
 Menambah dataset = menambah blok di datasets.yml, bukan menambah kode di sini.
 
 Sembilan dimensi:
-  1. SCHEMA          struktur tabel: jumlah, urutan, nama, tipe kolom
+  1. SCHEMA          schema evolution: jumlah, nama, tipe kolom (BUKAN urutan
+                     — Parquet read-by-name, lihat check_schema())
   2. VOLUME          ukuran data tidak terlalu sedikit / meluap
   3. FRESHNESS       keterbaruan & ketepatan granularitas waktu
   4. MISSINGNESS     null, string kosong, lonjakan kekosongan
   5. UNIQUENESS      duplikasi pada kunci teknis maupun kunci bisnis
   6. INTEGRITY       referential ke master + konsistensi antar kolom
   7. DISTRIBUTION    mean, stdev, kuantil, KL divergence, z-score
-  8. UNSTRUCTURED    pola string, panjang, karakter kotor
+  8. DATA CLEANLINESS & ENCODING   pola string, panjang, karakter kotor/mojibake
+     (nama dulu "UNSTRUCTURED" — keliru: data tujuan Parquet sudah tabular/
+     terstruktur, lihat check_cleanliness())
   9. REKONSILIASI    row count & kelengkapan kolom vs SQL Server (opsional)
      SUMBER
 """
@@ -27,11 +30,15 @@ import great_expectations.expectations as gxe
 
 CATEGORIES = [
     "1. SCHEMA", "2. VOLUME", "3. FRESHNESS", "4. MISSINGNESS",
-    "5. UNIQUENESS", "6. INTEGRITY", "7. DISTRIBUTION", "8. UNSTRUCTURED DATA",
+    "5. UNIQUENESS", "6. INTEGRITY", "7. DISTRIBUTION",
+    "8. DATA CLEANLINESS & ENCODING",
     "9. REKONSILIASI SUMBER",
 ]
 
-# Regex "kotoran" yang tidak boleh ada di kolom teks apa pun.
+# Regex "kotoran" yang tidak boleh ada di kolom teks apa pun. Motivasi utamanya
+# encoding, bukan struktur: konversi kolasi SQL Server 2012 (umumnya
+# SQL_Latin1_General) ke UTF-8 di S3 bisa menyisipkan mojibake/karakter kontrol
+# yang tidak pernah ada di sumbernya.
 POLA_KOTOR: list[tuple[str, str, str]] = [
     (r"^\s|\s$", "spasi di awal/akhir (padding tak sengaja)", "blocking"),
     (r"^\s*$", "string kosong atau hanya spasi (missing tersembunyi)", "blocking"),
@@ -189,6 +196,23 @@ def buat_batch(df_raw: pd.DataFrame, df_work: pd.DataFrame):
 # ---------------------------------------------------------------------------
 
 def check_schema(r: Runner, spec):
+    """
+    Dimensi ini menegakkan SCHEMA EVOLUTION, bukan kesamaan posisi kolom.
+
+    Data tujuan berformat Parquet, yang bersifat read-by-name: nama tiap kolom
+    tersimpan di metadata file itu sendiri, dan Spark/Athena/pandas/dst
+    me-resolve kolom berdasarkan NAMA itu, bukan posisi fisiknya (berbeda
+    dari CSV, yang memang rawan salah baca kalau urutan bergeser). Karena
+    itu urutan kolom SENGAJA tidak diperiksa di sini — kolom yang bergeser
+    posisi tidak merusak konsumen mana pun yang membaca Parquet secara wajar.
+
+    Yang benar-benar berbahaya, dan karena itu yang diperiksa: (1) kolom
+    kontrak yang hilang atau berganti nama, (2) kolom asing yang muncul
+    tanpa diketahui pipeline hilir, dan (3) tipe data sebuah kolom bergeser
+    (mis. kolom yang INT di sumber tiba-tiba terbaca STRING di bronze) —
+    kegagalan tipe silent seperti ini paling berbahaya karena lolos dari
+    check keberadaan kolom (nama kolomnya tetap sama).
+    """
     cat = "1. SCHEMA"
     token = type_tokens()
     kolom = spec.nama_kolom
@@ -196,18 +220,25 @@ def check_schema(r: Runner, spec):
     r.check(cat, f"Jumlah kolom tepat {len(kolom)}",
             gxe.ExpectTableColumnCountToEqual(value=len(kolom)), raw=True)
 
-    r.check(cat, "Nama DAN urutan kolom sama persis dengan kontrak di datasets.yml",
-            gxe.ExpectTableColumnsToMatchOrderedList(column_list=kolom), raw=True,
-            catatan="Urutan ikut diperiksa karena konsumen yang membaca lewat posisi "
-                    "kolom (COPY INTO, Spark tanpa header) akan salah baca bila bergeser.")
-
-    r.check(cat, "Tidak ada kolom tak terduga (exact match, bukan subset)",
-            gxe.ExpectTableColumnsToMatchSet(column_set=kolom, exact_match=True), raw=True)
+    r.check(cat, "Tidak ada kolom hilang maupun kolom tak terduga (schema evolution)",
+            gxe.ExpectTableColumnsToMatchSet(column_set=kolom, exact_match=True), raw=True,
+            catatan="Diperiksa sebagai HIMPUNAN, bukan urutan — Parquet bersifat "
+                    "read-by-name (nama kolom tersimpan di metadata file, dibaca "
+                    "berdasarkan nama oleh Spark/Athena/pandas), jadi kolom yang "
+                    "bergeser posisi tidak merusak konsumen mana pun. Yang justru "
+                    "berbahaya: kolom kontrak yang hilang/berganti nama, atau kolom "
+                    "asing yang muncul tanpa sepengetahuan pipeline hilir.")
 
     for k in spec.kolom:
         r.check(cat, f"Tipe {k.nama} = {k.tipe} ({token[k.tipe]})",
                 gxe.ExpectColumnValuesToBeOfType(column=k.nama, type_=token[k.tipe]),
-                raw=True)
+                raw=True,
+                catatan="Pelanggaran schema evolution paling berbahaya: kolom yang "
+                        "namanya tetap sama tapi tipenya bergeser (mis. INT di "
+                        "sumber tiba-tiba terbaca STRING di bronze) lolos dari check "
+                        "keberadaan kolom di atas, tapi tetap merusak konsumen yang "
+                        "masih berasumsi tipe lama."
+                if k.nama == spec.kolom[0].nama else None)
 
 
 # ---------------------------------------------------------------------------
@@ -411,6 +442,25 @@ def check_uniqueness(r: Runner, spec, df):
 # ---------------------------------------------------------------------------
 
 def check_integrity(r: Runner, spec, prof):
+    """
+    Dimensi ini murni bicara tentang HUBUNGAN ANTAR DATA — dua kategori:
+      - Referential Integrity   : nilai kolom valid terhadap daftar master
+        (referensi: true), dan pemetaan antar kode konsisten (relasi:).
+      - Business Logic Consistency : kolom-kolom yang secara bisnis wajib
+        selaras — nilai identik (sama_nilai:), urutan waktu logis
+        (urutan_waktu:, mis. tanggal kirim barang tidak boleh terjadi
+        sebelum tanggal pesan), dan flag boolean yang wajib sinkron dengan
+        kondisi pada kolom lain (flag_dq: dengan kolom:/aturan:).
+
+    Entri flag_dq: dengan kolom:/aturan: di sini BUKAN "audit kejujuran
+    flag DQ" — itu contoh biasa dari Business Logic Consistency: flag-nya
+    cuma representasi boolean dari sebuah kondisi pada kolom lain, dan
+    aturan bisnisnya sederhana: kedua kolom itu wajib selalu sinkron.
+    (flag_dq: dengan harus: — nilai konstan sepanjang partisi — ada di
+    dimensi 5. UNIQUENESS; konteksnya beda: itu memang mengaudit apakah
+    sinyal duplikat/QA dari pipeline hulu seragam, bukan hubungan antar
+    kolom, jadi tidak dipindah ke sini.)
+    """
     cat = "6. INTEGRITY"
     master = prof["master"]
     relasi = prof["relasi"]
@@ -464,13 +514,13 @@ def check_integrity(r: Runner, spec, prof):
         kol = spec.get(kolom)
         rentang = (f" DAN berada di [{kol.rentang[0]}, {kol.rentang[1]}]"
                    if jenis == "ada_dan_dalam_rentang" and kol and kol.rentang else "")
-        r.check(cat, f"Flag {flag} konsisten dengan isi {kolom}",
+        r.check(cat, f"Konsistensi logika bisnis: {flag} == ({kolom} ada nilainya{rentang})",
                 gxe.ExpectColumnPairValuesToBeEqual(
                     column_A=flag, column_B=f"_harap_{flag}"),
-                catatan=f"Aturan yang diuji: {flag} == ({kolom} ada nilainya{rentang}). "
-                        f"Menguji flag DQ terhadap data yang diwakilinya — kalau flagnya "
-                        f"sendiri bohong, semua konsumen yang menyaring pakai flag ini "
-                        f"ikut salah.")
+                catatan=f"{flag} adalah representasi boolean dari kondisi pada {kolom} — "
+                        f"bukan sinyal independen, jadi kedua kolom itu wajib selalu "
+                        f"sinkron. Kalau menyimpang, semua konsumen hilir yang menyaring "
+                        f"memakai {flag} (bukan {kolom} langsung) ikut salah tanpa disadari.")
 
 
 # ---------------------------------------------------------------------------
@@ -588,15 +638,27 @@ def check_distribution(r: Runner, spec, prof):
 
 
 # ---------------------------------------------------------------------------
-# 8. UNSTRUCTURED DATA
+# 8. DATA CLEANLINESS & ENCODING
 # ---------------------------------------------------------------------------
 
-def check_unstructured(r: Runner, spec, prof):
-    cat = "8. UNSTRUCTURED DATA"
+def check_cleanliness(r: Runner, spec, prof):
+    """
+    Dulu bernama "UNSTRUCTURED (DATA)" — nama itu keliru dan sudah tidak
+    dipakai lagi: data tujuan berformat Parquet, yang tabular/terstruktur,
+    bukan data tak terstruktur (free text, log, gambar, dst). Yang benar-benar
+    diperiksa di sini adalah KEBERSIHAN isi kolom teks & jejak masalah
+    ENCODING — pemicu paling umum: konversi kolasi SQL Server 2012 (biasanya
+    SQL_Latin1_General) ke UTF-8 saat data dipindahkan ke S3, yang bisa
+    menyisipkan mojibake atau karakter kontrol yang tidak pernah ada di
+    sumbernya. Cakupannya: kecocokan pola/panjang string terhadap bentuk
+    historis, karakter "kotor" (POLA_KOTOR), dan validasi ASCII-printable
+    khusus kolom kode/referensi.
+    """
+    cat = "8. DATA CLEANLINESS & ENCODING"
     pola = prof["pola_teks"]
 
     if not spec.kolom_string:
-        r.skip(cat, "Pemeriksaan data semi-terstruktur",
+        r.skip(cat, "Pemeriksaan kebersihan data & encoding",
                "Dataset ini tidak punya kolom bertipe string.")
         return
 
@@ -635,7 +697,9 @@ def check_unstructured(r: Runner, spec, prof):
             r.check(cat, f"{nama} hanya berisi karakter ASCII yang dapat dicetak",
                     gxe.ExpectColumnValuesToMatchRegex(column=nama, regex=r"^[\x20-\x7E]+$"),
                     catatan=("Karakter non-ASCII pada kolom kode hampir selalu berarti "
-                             "mojibake dari salah tafsir encoding di hulu.")
+                             "mojibake dari salah tafsir kolasi di hulu — paling umum: "
+                             "kolasi SQL Server 2012 (biasanya SQL_Latin1_General) yang "
+                             "terbaca ulang sebagai UTF-8 saat data dipindahkan ke S3.")
                     if nama == spec.kolom_referensi[0] else None)
 
 
@@ -731,7 +795,7 @@ def jalankan_semua(spec, prof, df_raw, partisi, mode: str, now: datetime,
     check_uniqueness(r, spec, df)
     check_integrity(r, spec, prof)
     check_distribution(r, spec, prof)
-    check_unstructured(r, spec, prof)
+    check_cleanliness(r, spec, prof)
     check_rekonsiliasi(r, spec, partisi, df_raw, reconcile)
     return r.results, df
 

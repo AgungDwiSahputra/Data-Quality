@@ -6,14 +6,16 @@ KODE INTI. Kamu jarang perlu menyentuhnya.
 Daftar dataset ada di file terpisah: datasets.yml
 
 Sembilan dimensi yang diperiksa:
-  1. SCHEMA          struktur tabel: jumlah, urutan, nama, tipe kolom
+  1. SCHEMA          schema evolution: jumlah, nama, tipe kolom (BUKAN urutan
+                     — Parquet read-by-name)
   2. VOLUME          ukuran data tidak terlalu sedikit / meluap
   3. FRESHNESS       keterbaruan & ketepatan granularitas waktu
   4. MISSINGNESS     null, string kosong, lonjakan kekosongan
   5. UNIQUENESS      duplikasi pada kunci teknis maupun kunci bisnis
   6. INTEGRITY       referential ke master + konsistensi antar kolom
   7. DISTRIBUTION    mean, stdev, kuantil, KL divergence, z-score
-  8. UNSTRUCTURED    pola string, panjang, karakter kotor
+  8. DATA CLEANLINESS & ENCODING   pola string, panjang, karakter kotor/mojibake
+     (nama dulu "UNSTRUCTURED" — keliru untuk data Parquet yang tabular)
   9. REKONSILIASI    row count & kelengkapan kolom terhadap SQL Server
                      SUMBER (opsional — hanya aktif kalau dataset
                      mendeklarasikan 'sumber.sql_server.tabel'; lihat --no-reconcile)

@@ -103,10 +103,12 @@ datasets:
     urutan_waktu:
       - [loaded_at, recorded_at]
 
-    # Audit terhadap flag DQ yang dihitung pipeline hulu.
-    #   aturan: ada                   -> flag == (kolom tidak null)
-    #   aturan: ada_dan_dalam_rentang -> flag == (tidak null DAN dalam rentang)
-    #   harus: true/false             -> seluruh nilai harus konstanta itu
+    # Dua pola berbeda di bawah, masing-masing masuk dimensi berbeda:
+    #   aturan: ada / ada_dan_dalam_rentang -> Business Logic Consistency
+    #     (dimensi 6. INTEGRITY): flag == kondisi pada kolom lain, keduanya
+    #     wajib selalu sinkron.
+    #   harus: true/false -> audit keseragaman sinyal QA dari pipeline hulu
+    #     (dimensi 5. UNIQUENESS): seluruh nilai dalam partisi harus konstanta itu.
     flag_dq:
       - flag: dq_nilai_valid
         kolom: nilai_ukur
