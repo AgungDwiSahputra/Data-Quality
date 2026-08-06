@@ -1,0 +1,1278 @@
+{
+  "expectations": [
+    {
+      "description": "device_id terdaftar di master (62 kode dikenal)",
+      "id": "13808124-1d23-4738-858f-2e020946b23a",
+      "kwargs": {
+        "column": "device_id",
+        "value_set": [
+          "200385",
+          "219241",
+          "219244",
+          "219252",
+          "219255",
+          "238309",
+          "238333",
+          "238345",
+          "238364",
+          "238365",
+          "238367",
+          "238377",
+          "238395",
+          "238399",
+          "238408",
+          "238422",
+          "238425",
+          "238428",
+          "238429",
+          "238435",
+          "238442",
+          "238445",
+          "238449",
+          "238453",
+          "238456",
+          "238457",
+          "269344",
+          "269345",
+          "269350",
+          "269354",
+          "269360",
+          "269362",
+          "269363",
+          "269364",
+          "269370",
+          "269373",
+          "269379",
+          "269381",
+          "269386",
+          "269387",
+          "416",
+          "419",
+          "423",
+          "424",
+          "428",
+          "432",
+          "433",
+          "434",
+          "437",
+          "438",
+          "440",
+          "441",
+          "442",
+          "444",
+          "445",
+          "447",
+          "901238432",
+          "901269356",
+          "901269366",
+          "901269392",
+          "901269490",
+          "MTI-JK2JTG6UZ06A"
+        ]
+      },
+      "meta": {
+        "catatan": "Daftar master ini union data historis, BUKAN master resmi \u2014 yang terdeteksi adalah kode yang belum pernah muncul. Untuk gerbang produksi, ganti dengan query ke tabel master.",
+        "kategori": "6. INTEGRITY",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_in_set"
+    },
+    {
+      "description": "vendor terdaftar di master (2 kode dikenal)",
+      "id": "3582159b-26bc-46f6-bdf7-a89c90a59e69",
+      "kwargs": {
+        "column": "vendor",
+        "value_set": [
+          "HOLYKELL",
+          "MERTANI"
+        ]
+      },
+      "meta": {
+        "kategori": "6. INTEGRITY",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_in_set"
+    },
+    {
+      "description": "device_type terdaftar di master (2 kode dikenal)",
+      "id": "28ee8c0d-b336-4ecc-bea2-a047ddceeeed",
+      "kwargs": {
+        "column": "device_type",
+        "value_set": [
+          "TMAS",
+          "TMAT"
+        ]
+      },
+      "meta": {
+        "kategori": "6. INTEGRITY",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_in_set"
+    },
+    {
+      "description": "connectivity terdaftar di master (3 kode dikenal)",
+      "id": "a193b83d-cbbd-4e8a-8cac-17c577a4d53a",
+      "kwargs": {
+        "column": "connectivity",
+        "value_set": [
+          "BLUETOOTH",
+          "NA",
+          "NON_BLUETOOTH"
+        ]
+      },
+      "meta": {
+        "kategori": "6. INTEGRITY",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_in_set"
+    },
+    {
+      "description": "latitude terdaftar di master (47 kode dikenal)",
+      "id": "bd019846-43ef-46dd-930a-76128561957c",
+      "kwargs": {
+        "column": "latitude",
+        "value_set": [
+          "-0.238253",
+          "-0.27034",
+          "-6.2243909",
+          "0.083517",
+          "0.08529",
+          "0.08828",
+          "0.10201",
+          "0.10228",
+          "0.110662",
+          "0.122102",
+          "0.13983",
+          "0.1467",
+          "0.1487",
+          "0.1586",
+          "0.174547",
+          "0.18188",
+          "0.194096",
+          "0.19907",
+          "0.20221",
+          "0.211662",
+          "0.211666",
+          "0.217616",
+          "0.21869178678750245",
+          "0.220292",
+          "0.223",
+          "0.223018",
+          "0.230734",
+          "0.230781",
+          "0.239008",
+          "0.253895",
+          "0.2987",
+          "0.3018",
+          "0.322317",
+          "0.67738",
+          "0.704144",
+          "0.7185",
+          "0.721946",
+          "0.73597",
+          "0.7842873",
+          "1.932395",
+          "1.954339",
+          "1.961405",
+          "1.967668",
+          "2.009659",
+          "28.216580871192235",
+          "28.216653124431488",
+          "28.225094305598898"
+        ]
+      },
+      "meta": {
+        "kategori": "6. INTEGRITY",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_in_set"
+    },
+    {
+      "description": "longitude terdaftar di master (47 kode dikenal)",
+      "id": "df4d8335-fb05-428d-bd58-a5de1fd99b0e",
+      "kwargs": {
+        "column": "longitude",
+        "value_set": [
+          "100.747031",
+          "100.764621",
+          "100.783512",
+          "100.813406",
+          "100.815625",
+          "102.925428",
+          "102.96424",
+          "102.966424",
+          "102.985424",
+          "103.0225",
+          "103.077479",
+          "103.079448",
+          "103.08121",
+          "103.09154",
+          "103.10125",
+          "103.102364",
+          "103.1223",
+          "103.1271",
+          "103.129868",
+          "103.133173",
+          "103.1382",
+          "103.149606",
+          "103.152744",
+          "103.155509",
+          "103.15910612344004",
+          "103.1641",
+          "103.1651",
+          "103.166915",
+          "103.16792",
+          "103.18418",
+          "103.18514",
+          "103.24978",
+          "103.263028",
+          "103.26983",
+          "106.83389",
+          "108.907861",
+          "108.9175357",
+          "108.92821",
+          "108.95898",
+          "108.961706",
+          "108.963425",
+          "109.295167",
+          "109.73624",
+          "109.76656",
+          "112.88673472137623",
+          "112.88682861632788",
+          "113.80149815926988"
+        ]
+      },
+      "meta": {
+        "kategori": "6. INTEGRITY",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_in_set"
+    },
+    {
+      "description": "plantation_code terdaftar di master (3 kode dikenal)",
+      "id": "064d3366-918f-40d1-b038-3fda9fe186f7",
+      "kwargs": {
+        "column": "plantation_code",
+        "value_set": [
+          "Kalbar",
+          "Sumatera",
+          "THIP"
+        ]
+      },
+      "meta": {
+        "kategori": "6. INTEGRITY",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_in_set"
+    },
+    {
+      "description": "region_name terdaftar di master (6 kode dikenal)",
+      "id": "9d1e93d5-0292-4654-9853-d46161f2b478",
+      "kwargs": {
+        "column": "region_name",
+        "value_set": [
+          "Kalbar A",
+          "Kalbar B",
+          "Region 1 Non THIP",
+          "Region 1 THIP",
+          "Region 2 Non THIP",
+          "Region 2 THIP"
+        ]
+      },
+      "meta": {
+        "kategori": "6. INTEGRITY",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_in_set"
+    },
+    {
+      "description": "company_code terdaftar di master (11 kode dikenal)",
+      "id": "78a7694b-c097-404f-baf9-1d2cf4c8ad9f",
+      "kwargs": {
+        "column": "company_code",
+        "value_set": [
+          "PT.BAS",
+          "PT.GAN",
+          "PT.JJP",
+          "PT.NJP",
+          "PT.PANPS",
+          "PT.PLDK",
+          "PT.PTW",
+          "PT.SAM",
+          "PT.SIP",
+          "PT.SUMK",
+          "PT.THIP"
+        ]
+      },
+      "meta": {
+        "kategori": "6. INTEGRITY",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_in_set"
+    },
+    {
+      "description": "est_code terdaftar di master (30 kode dikenal)",
+      "id": "fb399d45-bcd0-4b49-bb8d-b85228b89436",
+      "kwargs": {
+        "column": "est_code",
+        "value_set": [
+          "AGT",
+          "BEL",
+          "BIT",
+          "CEN",
+          "EBO",
+          "JAT",
+          "KAB",
+          "KBQ",
+          "KEM",
+          "KNP",
+          "KPE",
+          "KRJ",
+          "KSA",
+          "KSB",
+          "KSN",
+          "KSR",
+          "KST",
+          "KSU",
+          "KSY",
+          "KTR",
+          "MAG",
+          "MER",
+          "MHO",
+          "NAS",
+          "NYA",
+          "PUL",
+          "SEG",
+          "SIP2",
+          "TAY",
+          "TEB"
+        ]
+      },
+      "meta": {
+        "kategori": "6. INTEGRITY",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_in_set"
+    },
+    {
+      "description": "est_newCode terdaftar di master (30 kode dikenal)",
+      "id": "42800a5f-9a65-4205-84f0-31988c9865ff",
+      "kwargs": {
+        "column": "est_newCode",
+        "value_set": [
+          "BAS",
+          "GAN1",
+          "GAN2",
+          "GAN3",
+          "JJP1",
+          "JJP2",
+          "NJP",
+          "PLD2",
+          "PNP1",
+          "PTW1",
+          "PTW2",
+          "SAM",
+          "SIP2",
+          "SUM2",
+          "THP1",
+          "THP10",
+          "THP11",
+          "THP12",
+          "THP13",
+          "THP14",
+          "THP15",
+          "THP16",
+          "THP17",
+          "THP18",
+          "THP19",
+          "THP20",
+          "THP4",
+          "THP5",
+          "THP7",
+          "THP8"
+        ]
+      },
+      "meta": {
+        "kategori": "6. INTEGRITY",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_in_set"
+    },
+    {
+      "description": "est_codeSAP terdaftar di master (30 kode dikenal)",
+      "id": "3e525c9b-c166-4855-bd4d-d7c7dd34fedc",
+      "kwargs": {
+        "column": "est_codeSAP",
+        "value_set": [
+          "BS3A",
+          "GN3A",
+          "GN3B",
+          "GN3C",
+          "JJ3A",
+          "JJ3B",
+          "NJ3A",
+          "PD3B",
+          "PN3A",
+          "PT3A",
+          "PT3B",
+          "SA3A",
+          "SI3B",
+          "SU3B",
+          "TH3A",
+          "TH3D",
+          "TH3E",
+          "TH3G",
+          "TH3H",
+          "TH3J",
+          "TH3K",
+          "TH3L",
+          "TH3M",
+          "TH3N",
+          "TH3O",
+          "TH3P",
+          "TH3Q",
+          "TH3R",
+          "TH3S",
+          "TH3T"
+        ]
+      },
+      "meta": {
+        "kategori": "6. INTEGRITY",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_in_set"
+    },
+    {
+      "description": "blockGIS_id terdaftar di master (60 kode dikenal)",
+      "id": "b7644342-16a9-4f91-b57d-4e7b447831fe",
+      "kwargs": {
+        "column": "blockGIS_id",
+        "value_set": [
+          "11-21",
+          "13-22",
+          "22-22",
+          "24-17",
+          "26-13",
+          "31-16",
+          "35-18",
+          "36-14",
+          "39-23",
+          "40-09",
+          "42-15",
+          "43-10",
+          "43-24",
+          "43-32",
+          "45-30",
+          "48-23",
+          "48-31",
+          "49-33",
+          "50-17",
+          "50-24",
+          "51-08",
+          "59-24",
+          "63-23",
+          "67-09",
+          "7-22",
+          "70-07",
+          "71-17",
+          "72-18",
+          "73-02",
+          "75-11",
+          "A07",
+          "A17B",
+          "A43",
+          "AIRHITAM",
+          "B05C",
+          "B17",
+          "B54",
+          "C10",
+          "C50",
+          "D16",
+          "D18",
+          "D28",
+          "D36",
+          "E61",
+          "F37",
+          "F42",
+          "G45",
+          "G66R",
+          "G72",
+          "H51",
+          "I55",
+          "K67",
+          "KAPUAS",
+          "KPP",
+          "M096",
+          "N100",
+          "OFLOW",
+          "PU",
+          "S.RAYA",
+          "W02"
+        ]
+      },
+      "meta": {
+        "kategori": "6. INTEGRITY",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_in_set"
+    },
+    {
+      "description": "blockSAP_id terdaftar di master (55 kode dikenal)",
+      "id": "1855b126-3560-4098-aed3-f8b47d48f4c7",
+      "kwargs": {
+        "column": "blockSAP_id",
+        "value_set": [
+          "",
+          "004",
+          "013",
+          "026",
+          "027",
+          "040",
+          "044",
+          "050",
+          "056",
+          "074",
+          "075",
+          "090",
+          "093",
+          "094",
+          "100",
+          "111",
+          "150",
+          "165",
+          "185",
+          "187",
+          "191",
+          "205",
+          "230",
+          "263",
+          "271",
+          "280",
+          "313",
+          "316",
+          "326",
+          "330",
+          "334",
+          "346",
+          "353",
+          "356",
+          "427",
+          "452",
+          "458",
+          "475",
+          "497",
+          "581",
+          "592",
+          "667",
+          "688",
+          "702",
+          "729",
+          "730",
+          "740",
+          "761",
+          "AIRHITAM",
+          "D36",
+          "KAPUAS",
+          "KPP",
+          "OFLOW",
+          "PU",
+          "S.RAYA"
+        ]
+      },
+      "meta": {
+        "kategori": "6. INTEGRITY",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_in_set"
+    },
+    {
+      "description": "water_level_source terdaftar di master (2 kode dikenal)",
+      "id": "d0cb02db-e148-4b81-b019-e7a6df29b8e1",
+      "kwargs": {
+        "column": "water_level_source",
+        "value_set": [
+          "DERIVED",
+          "DIRECT"
+        ]
+      },
+      "meta": {
+        "kategori": "6. INTEGRITY",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_in_set"
+    },
+    {
+      "description": "Pasangan vendor -> water_level_source konsisten dengan mapping historis",
+      "id": "f0cd8d76-f621-4c49-b9a1-734f3cf5170e",
+      "kwargs": {
+        "column_A": "vendor",
+        "column_B": "water_level_source",
+        "value_pairs_set": [
+          [
+            "HOLYKELL",
+            "DERIVED"
+          ],
+          [
+            "MERTANI",
+            "DIRECT"
+          ]
+        ]
+      },
+      "meta": {
+        "catatan": "Menangkap pergeseran mapping: satu kode yang tiba-tiba menunjuk pasangan berbeda berarti master berubah tanpa pemberitahuan, atau ada salah join di hulu.",
+        "kategori": "6. INTEGRITY",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_pair_values_to_be_in_set"
+    },
+    {
+      "description": "Pasangan latitude -> longitude konsisten dengan mapping historis",
+      "id": "25e01efd-3116-4df8-b0bb-722d4e09cf32",
+      "kwargs": {
+        "column_A": "latitude",
+        "column_B": "longitude",
+        "value_pairs_set": [
+          [
+            "-0.238253",
+            "109.295167"
+          ],
+          [
+            "-0.27034",
+            "109.76656"
+          ],
+          [
+            "-6.2243909",
+            "106.83389"
+          ],
+          [
+            "0.083517",
+            "103.102364"
+          ],
+          [
+            "0.08529",
+            "103.16792"
+          ],
+          [
+            "0.08828",
+            "103.0225"
+          ],
+          [
+            "0.10201",
+            "103.1651"
+          ],
+          [
+            "0.10228",
+            "103.18514"
+          ],
+          [
+            "0.110662",
+            "103.129868"
+          ],
+          [
+            "0.122102",
+            "103.133173"
+          ],
+          [
+            "0.13983",
+            "102.966424"
+          ],
+          [
+            "0.1467",
+            "103.1641"
+          ],
+          [
+            "0.1487",
+            "103.1223"
+          ],
+          [
+            "0.1586",
+            "103.09154"
+          ],
+          [
+            "0.174547",
+            "102.985424"
+          ],
+          [
+            "0.18188",
+            "102.96424"
+          ],
+          [
+            "0.194096",
+            "103.149606"
+          ],
+          [
+            "0.19907",
+            "103.08121"
+          ],
+          [
+            "0.20221",
+            "103.10125"
+          ],
+          [
+            "0.211662",
+            "103.166915"
+          ],
+          [
+            "0.211666",
+            "102.925428"
+          ],
+          [
+            "0.217616",
+            "103.26983"
+          ],
+          [
+            "0.21869178678750245",
+            "103.15910612344004"
+          ],
+          [
+            "0.220292",
+            "103.152744"
+          ],
+          [
+            "0.223",
+            "103.24978"
+          ],
+          [
+            "0.223018",
+            "103.263028"
+          ],
+          [
+            "0.230734",
+            "103.18418"
+          ],
+          [
+            "0.230781",
+            "103.077479"
+          ],
+          [
+            "0.239008",
+            "109.73624"
+          ],
+          [
+            "0.253895",
+            "103.155509"
+          ],
+          [
+            "0.2987",
+            "103.1271"
+          ],
+          [
+            "0.3018",
+            "103.1382"
+          ],
+          [
+            "0.322317",
+            "103.079448"
+          ],
+          [
+            "0.67738",
+            "108.961706"
+          ],
+          [
+            "0.704144",
+            "108.963425"
+          ],
+          [
+            "0.7185",
+            "108.95898"
+          ],
+          [
+            "0.721946",
+            "108.907861"
+          ],
+          [
+            "0.73597",
+            "108.92821"
+          ],
+          [
+            "0.7842873",
+            "108.9175357"
+          ],
+          [
+            "1.932395",
+            "100.783512"
+          ],
+          [
+            "1.954339",
+            "100.764621"
+          ],
+          [
+            "1.961405",
+            "100.813406"
+          ],
+          [
+            "1.967668",
+            "100.747031"
+          ],
+          [
+            "2.009659",
+            "100.815625"
+          ],
+          [
+            "28.216580871192235",
+            "112.88673472137623"
+          ],
+          [
+            "28.216653124431488",
+            "112.88682861632788"
+          ],
+          [
+            "28.225094305598898",
+            "113.80149815926988"
+          ]
+        ]
+      },
+      "meta": {
+        "kategori": "6. INTEGRITY",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_pair_values_to_be_in_set"
+    },
+    {
+      "description": "Pasangan est_code -> est_newCode konsisten dengan mapping historis",
+      "id": "f56c2c89-5430-4dc1-ab32-b1f4af285f14",
+      "kwargs": {
+        "column_A": "est_code",
+        "column_B": "est_newCode",
+        "value_pairs_set": [
+          [
+            "AGT",
+            "THP20"
+          ],
+          [
+            "BEL",
+            "THP15"
+          ],
+          [
+            "BIT",
+            "THP18"
+          ],
+          [
+            "CEN",
+            "THP11"
+          ],
+          [
+            "EBO",
+            "THP4"
+          ],
+          [
+            "JAT",
+            "THP14"
+          ],
+          [
+            "KAB",
+            "NJP"
+          ],
+          [
+            "KBQ",
+            "GAN3"
+          ],
+          [
+            "KEM",
+            "THP16"
+          ],
+          [
+            "KNP",
+            "SUM2"
+          ],
+          [
+            "KPE",
+            "PNP1"
+          ],
+          [
+            "KRJ",
+            "PLD2"
+          ],
+          [
+            "KSA",
+            "PTW1"
+          ],
+          [
+            "KSB",
+            "JJP1"
+          ],
+          [
+            "KSN",
+            "SAM"
+          ],
+          [
+            "KSR",
+            "JJP2"
+          ],
+          [
+            "KST",
+            "PTW2"
+          ],
+          [
+            "KSU",
+            "BAS"
+          ],
+          [
+            "KSY",
+            "GAN1"
+          ],
+          [
+            "KTR",
+            "GAN2"
+          ],
+          [
+            "MAG",
+            "THP19"
+          ],
+          [
+            "MER",
+            "THP1"
+          ],
+          [
+            "MHO",
+            "THP8"
+          ],
+          [
+            "NAS",
+            "THP7"
+          ],
+          [
+            "NYA",
+            "THP13"
+          ],
+          [
+            "PUL",
+            "THP10"
+          ],
+          [
+            "SEG",
+            "THP12"
+          ],
+          [
+            "SIP2",
+            "SIP2"
+          ],
+          [
+            "TAY",
+            "THP17"
+          ],
+          [
+            "TEB",
+            "THP5"
+          ]
+        ]
+      },
+      "meta": {
+        "kategori": "6. INTEGRITY",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_pair_values_to_be_in_set"
+    },
+    {
+      "description": "Pasangan est_code -> est_codeSAP konsisten dengan mapping historis",
+      "id": "f7b2e5c6-4889-4f63-a4b5-9cfb0279201d",
+      "kwargs": {
+        "column_A": "est_code",
+        "column_B": "est_codeSAP",
+        "value_pairs_set": [
+          [
+            "AGT",
+            "TH3T"
+          ],
+          [
+            "BEL",
+            "TH3O"
+          ],
+          [
+            "BIT",
+            "TH3R"
+          ],
+          [
+            "CEN",
+            "TH3K"
+          ],
+          [
+            "EBO",
+            "TH3D"
+          ],
+          [
+            "JAT",
+            "TH3N"
+          ],
+          [
+            "KAB",
+            "NJ3A"
+          ],
+          [
+            "KBQ",
+            "GN3C"
+          ],
+          [
+            "KEM",
+            "TH3P"
+          ],
+          [
+            "KNP",
+            "SU3B"
+          ],
+          [
+            "KPE",
+            "PN3A"
+          ],
+          [
+            "KRJ",
+            "PD3B"
+          ],
+          [
+            "KSA",
+            "PT3A"
+          ],
+          [
+            "KSB",
+            "JJ3A"
+          ],
+          [
+            "KSN",
+            "SA3A"
+          ],
+          [
+            "KSR",
+            "JJ3B"
+          ],
+          [
+            "KST",
+            "PT3B"
+          ],
+          [
+            "KSU",
+            "BS3A"
+          ],
+          [
+            "KSY",
+            "GN3A"
+          ],
+          [
+            "KTR",
+            "GN3B"
+          ],
+          [
+            "MAG",
+            "TH3S"
+          ],
+          [
+            "MER",
+            "TH3A"
+          ],
+          [
+            "MHO",
+            "TH3H"
+          ],
+          [
+            "NAS",
+            "TH3G"
+          ],
+          [
+            "NYA",
+            "TH3M"
+          ],
+          [
+            "PUL",
+            "TH3J"
+          ],
+          [
+            "SEG",
+            "TH3L"
+          ],
+          [
+            "SIP2",
+            "SI3B"
+          ],
+          [
+            "TAY",
+            "TH3Q"
+          ],
+          [
+            "TEB",
+            "TH3E"
+          ]
+        ]
+      },
+      "meta": {
+        "kategori": "6. INTEGRITY",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_pair_values_to_be_in_set"
+    },
+    {
+      "description": "Pasangan est_newCode -> est_codeSAP konsisten dengan mapping historis",
+      "id": "503505f4-fdb7-4e99-bac7-7dc988060044",
+      "kwargs": {
+        "column_A": "est_newCode",
+        "column_B": "est_codeSAP",
+        "value_pairs_set": [
+          [
+            "BAS",
+            "BS3A"
+          ],
+          [
+            "GAN1",
+            "GN3A"
+          ],
+          [
+            "GAN2",
+            "GN3B"
+          ],
+          [
+            "GAN3",
+            "GN3C"
+          ],
+          [
+            "JJP1",
+            "JJ3A"
+          ],
+          [
+            "JJP2",
+            "JJ3B"
+          ],
+          [
+            "NJP",
+            "NJ3A"
+          ],
+          [
+            "PLD2",
+            "PD3B"
+          ],
+          [
+            "PNP1",
+            "PN3A"
+          ],
+          [
+            "PTW1",
+            "PT3A"
+          ],
+          [
+            "PTW2",
+            "PT3B"
+          ],
+          [
+            "SAM",
+            "SA3A"
+          ],
+          [
+            "SIP2",
+            "SI3B"
+          ],
+          [
+            "SUM2",
+            "SU3B"
+          ],
+          [
+            "THP1",
+            "TH3A"
+          ],
+          [
+            "THP10",
+            "TH3J"
+          ],
+          [
+            "THP11",
+            "TH3K"
+          ],
+          [
+            "THP12",
+            "TH3L"
+          ],
+          [
+            "THP13",
+            "TH3M"
+          ],
+          [
+            "THP14",
+            "TH3N"
+          ],
+          [
+            "THP15",
+            "TH3O"
+          ],
+          [
+            "THP16",
+            "TH3P"
+          ],
+          [
+            "THP17",
+            "TH3Q"
+          ],
+          [
+            "THP18",
+            "TH3R"
+          ],
+          [
+            "THP19",
+            "TH3S"
+          ],
+          [
+            "THP20",
+            "TH3T"
+          ],
+          [
+            "THP4",
+            "TH3D"
+          ],
+          [
+            "THP5",
+            "TH3E"
+          ],
+          [
+            "THP7",
+            "TH3G"
+          ],
+          [
+            "THP8",
+            "TH3H"
+          ]
+        ]
+      },
+      "meta": {
+        "kategori": "6. INTEGRITY",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_pair_values_to_be_in_set"
+    },
+    {
+      "description": "loaded_at >= recorded_at (data tidak diproses sebelum terjadi)",
+      "id": "c58aff3b-5126-420c-9836-a17467c6a522",
+      "kwargs": {
+        "column_A": "loaded_at",
+        "column_B": "recorded_at",
+        "or_equal": true
+      },
+      "meta": {
+        "kategori": "6. INTEGRITY",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_pair_values_a_to_be_greater_than_b"
+    }
+  ],
+  "id": "0de60ac0-a6c2-40df-b31a-8a1d49ce2933",
+  "meta": {
+    "great_expectations_version": "1.19.1"
+  },
+  "name": "awl_6_integrity",
+  "notes": null
+}

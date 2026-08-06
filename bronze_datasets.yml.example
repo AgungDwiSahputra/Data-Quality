@@ -1,0 +1,136 @@
+# ===========================================================================
+# CONTOH bronze_datasets.yml — salin jadi "bronze_datasets.yml" lalu isi
+# dengan dataset bronze Anda sendiri.
+#
+# bronze_datasets.yml ASLI TIDAK masuk Git (lihat .gitignore) karena isinya
+# struktur data internal organisasi: nama tabel SQL Server, nama bucket S3,
+# nama kolom sumber. Berkas CONTOH ini tetap generik/placeholder sehingga
+# aman untuk di-versi-kan.
+#
+# File ini TERPISAH dari datasets.yml (layer gold). Ketiga skrip inti
+# menerima file config lain lewat --config, jadi seluruh dataset bronze
+# divalidasi lewat file ini tanpa mencampurnya dengan datasets.yml:
+#
+#   python scaffold.py        --config bronze_datasets.yml --nama <ds> --s3 "..." --tempel
+#   python build_reference.py --config bronze_datasets.yml --dataset <ds> --source s3
+#   python validate.py        --config bronze_datasets.yml --dataset <ds> --source s3
+#   python validate.py        --config bronze_datasets.yml --list
+#
+# Bronze TIDAK menegakkan aturan bisnis apa pun (tanpa referensi, relasi,
+# profil_distribusi, kunci bisnis/surrogate). Cakupan validasinya sengaja
+# dipersempit jadi HANYA tiga syarat:
+#   1) struktur & tipe kolom sumber tidak berubah     -> dimensi 1. SCHEMA
+#   2) kolom waktu ingest ada dan selalu terisi       -> dimensi 4. MISSINGNESS
+#   3) row count & kelengkapan kolom vs SQL Server    -> dimensi 9. REKONSILIASI SUMBER
+#      (audit aliran data / row count validation — opsional, lihat blok
+#      'sumber.sql_server' di tiap dataset & --no-reconcile di validate.py)
+#
+# Konsekuensi otomatis dari TIDAK mendeklarasikan kunci.surrogate/bisnis,
+# referensi:, relasi:, atau profil_distribusi: — dimensi 5. UNIQUENESS,
+# 6. INTEGRITY, dan 7. DISTRIBUTION otomatis DILEWATI dengan alasan yang
+# tercatat di laporan (bukan lulus diam-diam). Dimensi 3. FRESHNESS juga
+# dilewati karena tidak ada kunci.waktu (waktu KEJADIAN di sumber) — bronze
+# hanya tahu kapan pipeline MEMASUKKAN baris, bukan kapan baris itu "terjadi"
+# di SQL Server.
+#
+# Dua dimensi TETAP otomatis aktif walau tidak diminta, karena bawaan mesin
+# (bukan sesuatu yang ditambahkan lewat konfigurasi per dataset):
+#   - 2. VOLUME        koridor jumlah baris (tidak bisa dimatikan per dataset)
+#   - 8. UNSTRUCTURED  pola/panjang/karakter kotor untuk SETIAP kolom string
+#
+# Dimensi 9 BUTUH koneksi live ke SQL Server (pyodbc + ODBC Driver 17,
+# kredensial SQLSERVER_HOST/DB/UID/PWD di .env folder ini — lihat
+# dqcore/sqlserver.py). Kalau kredensial belum diisi atau tidak ada akses
+# jaringan/VPN, dimensi ini tercatat GAGAL dengan error koneksi (bukan
+# membuat seluruh validate.py berhenti) — atau lewati dulu dengan
+# 'python validate.py ... --no-reconcile'.
+#
+# ${VAR} diganti otomatis dengan environment variable (dari .env), sama
+# seperti datasets.yml.
+# ===========================================================================
+
+default:
+  # Dipakai semua dataset bronze kecuali ditimpa di blok datasetnya sendiri.
+  # Hanya toleransi_volume & margin_null yang relevan di sini — sisanya
+  # (batas_kl, batas_zscore, margin_mean/stdev/kuantil) khusus dimensi
+  # DISTRIBUTION, yang tidak dipakai bronze sama sekali.
+  ambang:
+    toleransi_volume: 0.15   # koridor jumlah baris = median historis +/- 15%
+    margin_null: 0.05        # kelonggaran di atas null rate historis terburuk
+  sla_lag_hari:
+    harian: 2.0
+    backfill: 260.0
+
+datasets:
+
+  # =========================================================================
+  # TEMPLATE — ganti key & isi di bawah untuk setiap tabel sumber SQL Server.
+  #
+  # CARA PAKAI:
+  #   1) Salin blok ini, ganti key 'bronze_nama_tabel' jadi nama tabel
+  #      sumbernya (mis. bronze_hk_transaction untuk dbo.T_IOT_HK_Transaction).
+  #   2) Begitu file bronze pertama mendarat di S3, JANGAN ketik kolom manual
+  #      — jalankan:
+  #        python scaffold.py --config bronze_datasets.yml --nama bronze_nama_tabel \
+  #            --s3 "s3://<bucket>/datalake/bronze/<nama_tabel>" --tempel
+  #      lalu HAPUS bagian yang ditandai TEBAKAN oleh scaffold.py (kunci.
+  #      surrogate, kunci.bisnis, relasi, sama_nilai, urutan_waktu, flag_dq)
+  #      — bronze ini sengaja tidak memakainya. Sisakan hanya daftar 'kolom:'
+  #      hasil scaffold + baris etl_insertedat di bawah.
+  #   3) python build_reference.py --config bronze_datasets.yml --dataset bronze_nama_tabel --source s3
+  #      python validate.py        --config bronze_datasets.yml --dataset bronze_nama_tabel --source s3
+  #
+  # Pemetaan tipe SQL Server 2012 -> tipe logis di sini:
+  #   int/bigint/smallint/tinyint -> integer     bit             -> boolean
+  #   varchar/nvarchar/char/text  -> string       decimal/numeric -> decimal
+  #   datetime/datetime2/date     -> datetime     float/real      -> float
+  # =========================================================================
+  bronze_nama_tabel:
+    deskripsi: "Bronze <nama_tabel> — replikasi 1:1 dari SQL Server 2012, tanpa transformasi"
+
+    sumber:
+      s3: "s3://${S3_BUCKET_NAME}/datalake/bronze/<nama_tabel>"
+      # snapshot      -> full extract berkala (folder snapshot_date=YYYY-MM-DD)
+      # harian        -> incremental/CDC harian (folder recorded_year=/month=/day=)
+      # tanpa_partisi -> satu file, ditimpa/ditambah setiap run
+      partisi: snapshot
+
+      # TODO — untuk dimensi 9. REKONSILIASI SUMBER (row count + kelengkapan
+      # kolom vs SQL Server). Hapus seluruh blok ini kalau tidak diperlukan;
+      # dimensi 9 otomatis dilewati bila 'tabel' tidak diisi.
+      sql_server:
+        tabel: "dbo.NAMA_TABEL_SUMBER"     # TODO — ganti nama tabel/view SQL Server aslinya
+        kolom_waktu: kolom_3               # TODO — kolom WHERE filter; HARUS ada juga di
+                                            # daftar 'kolom:' di bawah dengan nama yang sama.
+                                            # Kosongkan (hapus baris ini) untuk full-table
+                                            # count, mis. kalau bronze memang full snapshot.
+        offset_jam: 0                      # geser window WHERE dari tengah malam (jam).
+                                            # Samakan dengan window job ingest yang sebenarnya
+                                            # menulis ke bronze (cek WHERE clause-nya) — kalau
+                                            # beda, row count TIDAK AKAN PERNAH cocok meski
+                                            # datanya benar.
+
+    kunci:
+      # SATU-SATUNYA kunci yang dideklarasikan — waktu pipeline MEMASUKKAN
+      # baris, bukan kunci.waktu (waktu kejadian di sumber). Lihat catatan
+      # dimensi FRESHNESS di komentar atas: dilewati dengan sengaja.
+      waktu_muat: etl_insertedat
+
+    # Urutan & tipe di bawah ini HARUS identik dengan SELECT * pada tabel
+    # sumber SQL Server — inilah yang menegakkan syarat "tersimpan 100% tanpa
+    # modifikasi isi": dimensi SCHEMA gagal kalau ada kolom hilang/tertambah/
+    # tertukar urutan, atau tipenya berubah.
+    #
+    # 'wajib: false' pada SETIAP kolom sumber SENGAJA: bronze tidak boleh
+    # menegakkan aturan "tidak boleh null" yang tidak ada di sumbernya
+    # sendiri — itu sudah termasuk modifikasi ekspektasi, bukan sekadar data.
+    # Kalau suatu kolom memang NOT NULL di SQL Server, hapus 'wajib: false'
+    # untuk kolom itu saja (default tanpa penanda ini adalah wajib: true).
+    kolom:
+      - {nama: kolom_1, tipe: string,   wajib: false}   # TODO — ganti nama & tipe asli, urutan sama seperti sumber
+      - {nama: kolom_2, tipe: integer,  wajib: false}   # TODO
+      - {nama: kolom_3, tipe: datetime, wajib: false}   # TODO
+      # ... TODO lanjutkan untuk SEMUA kolom sumber
+
+      # Satu-satunya kolom yang BUKAN berasal dari tabel sumber.
+      - {nama: etl_insertedat, tipe: datetime, wajib: true}

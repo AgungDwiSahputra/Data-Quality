@@ -1,0 +1,38 @@
+great_expectations
+pandas
+pyarrow
+
+# Membaca datasets.yml.
+PyYAML
+
+# scipy dipakai ExpectColumnKLDivergenceToBeLessThan & ExpectColumnValueZScoresToBeLessThan
+# (dimensi DISTRIBUTION). Biasanya sudah ikut great_expectations, ditulis eksplisit
+# karena menjadi ketergantungan langsung.
+scipy
+
+# Membaca datasets.yml yang memakai ${VAR}, dan kredensial AWS dari .env.
+python-dotenv
+
+# Hanya diperlukan bila memakai --source s3. Boleh dilewati untuk validasi lokal.
+boto3
+
+# Hanya diperlukan oleh dimensi 9 (REKONSILIASI SUMBER) — dilewati otomatis
+# (atau lewat --no-reconcile) kalau dataset tidak mendeklarasikan
+# 'sumber.sql_server.tabel' di datasets.yml. Butuh ODBC Driver 17 for SQL
+# Server terinstal di OS, bukan hanya paket Python-nya. Lihat dqcore/sqlserver.py.
+pyodbc
+
+# Versi yang sudah diuji:
+#   great_expectations 1.19.1
+#   pandas             3.0.5
+#   pyarrow            25.0.0
+#   scipy              1.18.0
+#   PyYAML             6.0.3
+#   boto3              1.43.58
+#   python-dotenv      1.2.2
+#   pyodbc             5.2.0
+#   Python             3.12.9
+#
+# CATATAN pandas 3.x: kolom string dilaporkan dengan dtype 'str', pada pandas 2.x
+# 'object'. dqcore/checks.py menangani perbedaan ini otomatis lewat type_tokens(),
+# jadi kontrak tipe di datasets.yml tidak perlu diubah saat versi pandas berganti.

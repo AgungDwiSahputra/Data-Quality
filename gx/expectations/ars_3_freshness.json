@@ -1,0 +1,73 @@
+{
+  "expectations": [
+    {
+      "description": "Semua recorded_at di dalam window partisi [2026-07-30 00:00 .. 2026-07-30 23:59]",
+      "id": "de792c25-a523-466d-b072-ef2b33b510ac",
+      "kwargs": {
+        "column": "recorded_at",
+        "max_value": "2026-07-30T23:59:59.999999",
+        "min_value": "2026-07-30T00:00:00"
+      },
+      "meta": {
+        "catatan": "Tanggal acuan diambil dari NAMA PARTISI, bukan dari isi kolom, supaya check ini benar-benar bisa gagal.",
+        "kategori": "3. FRESHNESS",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_between"
+    },
+    {
+      "description": "recorded_at terbaru menyentuh akhir window partisi",
+      "id": "9c416510-0b4e-4885-ba07-b478d552af03",
+      "kwargs": {
+        "column": "recorded_at",
+        "max_value": "2026-07-30T23:59:59.999999",
+        "min_value": "2026-07-30T20:00:00"
+      },
+      "meta": {
+        "catatan": "Kalau periode terakhir tidak pernah terisi, data hari itu terpotong (ETL berhenti di tengah jalan).",
+        "kategori": "3. FRESHNESS",
+        "severity": "warning"
+      },
+      "severity": "critical",
+      "type": "expect_column_max_to_be_between"
+    },
+    {
+      "description": "recorded_at tidak berada di masa depan",
+      "id": "388d44cd-8b16-45fc-9fb2-51d5658e48b3",
+      "kwargs": {
+        "column": "recorded_at",
+        "max_value": "2026-08-05T17:34:18.225159"
+      },
+      "meta": {
+        "catatan": "Dibandingkan dengan waktu jalannya validasi (2026-08-05 17:34). Timestamp masa depan biasanya berarti jam perangkat salah set.",
+        "kategori": "3. FRESHNESS",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_between"
+    },
+    {
+      "description": "Lag ingest (loaded_at - recorded_at) <= 260 hari [mode=backfill]",
+      "id": "d6f2710a-9a94-495d-a8cf-0ba388b038d1",
+      "kwargs": {
+        "column": "_lag_hari",
+        "max_value": 260.0,
+        "min_value": 0.0
+      },
+      "meta": {
+        "catatan": "Mode 'harian' memakai SLA pipeline normal; mode 'backfill' dilonggarkan karena pemuatan ulang data historis memang berlag besar. Nilai lag sebenarnya tetap tampil di kolom Observasi.",
+        "kategori": "3. FRESHNESS",
+        "severity": "warning"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_between"
+    }
+  ],
+  "id": "8604538f-567b-4449-aba9-2ce4dbfa38fa",
+  "meta": {
+    "great_expectations_version": "1.19.1"
+  },
+  "name": "ars_3_freshness",
+  "notes": null
+}

@@ -1,0 +1,189 @@
+{
+  "expectations": [
+    {
+      "description": "id_transaction tidak boleh null",
+      "id": "24b12e84-bee1-458b-8d62-202ffd71e8a9",
+      "kwargs": {
+        "column": "id_transaction"
+      },
+      "meta": {
+        "kategori": "4. MISSINGNESS",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_not_be_null"
+    },
+    {
+      "description": "sensor_company_id tidak boleh null",
+      "id": "8e2b417f-9e35-4f8c-8caa-3d9ba7ae3c4f",
+      "kwargs": {
+        "column": "sensor_company_id"
+      },
+      "meta": {
+        "kategori": "4. MISSINGNESS",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_not_be_null"
+    },
+    {
+      "description": "device_id tidak boleh null",
+      "id": "102e8bd9-ad97-4076-a692-54878a42bc24",
+      "kwargs": {
+        "column": "device_id"
+      },
+      "meta": {
+        "kategori": "4. MISSINGNESS",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_not_be_null"
+    },
+    {
+      "description": "valueRaw tidak boleh null",
+      "id": "d2f732fa-53b2-4187-8b94-f8231ec7b2b8",
+      "kwargs": {
+        "column": "valueRaw"
+      },
+      "meta": {
+        "kategori": "4. MISSINGNESS",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_not_be_null"
+    },
+    {
+      "description": "calibration tidak boleh null",
+      "id": "3076362f-9b53-48e9-8146-7d1d20a03db7",
+      "kwargs": {
+        "column": "calibration"
+      },
+      "meta": {
+        "kategori": "4. MISSINGNESS",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_not_be_null"
+    },
+    {
+      "description": "calibrationWaterLevel tidak boleh null",
+      "id": "cf29b35a-40a7-4d0a-99b6-9f9ff29106f1",
+      "kwargs": {
+        "column": "calibrationWaterLevel"
+      },
+      "meta": {
+        "kategori": "4. MISSINGNESS",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_not_be_null"
+    },
+    {
+      "description": "recordTime tidak boleh null",
+      "id": "cea28f37-8f88-4866-b07b-7131eaa50c67",
+      "kwargs": {
+        "column": "recordTime"
+      },
+      "meta": {
+        "kategori": "4. MISSINGNESS",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_not_be_null"
+    },
+    {
+      "description": "recordUtcTime tidak boleh null",
+      "id": "bad4bebc-a5c5-4eb0-a306-eeaea5c552bd",
+      "kwargs": {
+        "column": "recordUtcTime"
+      },
+      "meta": {
+        "kategori": "4. MISSINGNESS",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_not_be_null"
+    },
+    {
+      "description": "Proporsi uploadTime terisi >= 0.0000",
+      "id": "4c54a46f-0abe-4e4f-8745-dda6d35bfa88",
+      "kwargs": {
+        "column": "uploadTime",
+        "max_value": 1.0,
+        "min_value": 0.0
+      },
+      "meta": {
+        "catatan": "Ambang = null rate historis terburuk (1.0000) + margin 5%. Kolom ini memang boleh kosong, tapi lonjakan di atas ambang menandakan masalah hulu.",
+        "kategori": "4. MISSINGNESS",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_proportion_of_non_null_values_to_be_between"
+    },
+    {
+      "description": "Proporsi isManual terisi >= 0.0000",
+      "id": "217e84e5-5ef9-466f-9206-cd9b81a4f155",
+      "kwargs": {
+        "column": "isManual",
+        "max_value": 1.0,
+        "min_value": 0.0
+      },
+      "meta": {
+        "catatan": "Ambang = null rate historis terburuk (1.0000) + margin 5%. Kolom ini memang boleh kosong, tapi lonjakan di atas ambang menandakan masalah hulu.",
+        "kategori": "4. MISSINGNESS",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_proportion_of_non_null_values_to_be_between"
+    },
+    {
+      "description": "id_transaction bukan string kosong / hanya spasi",
+      "id": "e6a28eac-5584-41b3-bc91-c04d1c739f7f",
+      "kwargs": {
+        "column": "id_transaction",
+        "min_value": 1
+      },
+      "meta": {
+        "catatan": "String kosong lolos dari pemeriksaan NOT NULL biasa, padahal efeknya sama-sama data hilang.",
+        "kategori": "4. MISSINGNESS",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_value_lengths_to_be_between"
+    },
+    {
+      "description": "sensor_company_id bukan string kosong / hanya spasi",
+      "id": "87b47a33-23cc-4b03-bca2-3dc8ec358adf",
+      "kwargs": {
+        "column": "sensor_company_id",
+        "min_value": 1
+      },
+      "meta": {
+        "kategori": "4. MISSINGNESS",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_value_lengths_to_be_between"
+    },
+    {
+      "description": "device_id bukan string kosong / hanya spasi",
+      "id": "51a16457-34d8-4b12-8ccf-bd0d2b5d79d7",
+      "kwargs": {
+        "column": "device_id",
+        "min_value": 1
+      },
+      "meta": {
+        "kategori": "4. MISSINGNESS",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_value_lengths_to_be_between"
+    }
+  ],
+  "id": "d254e479-4a43-4f26-9945-0b28ee9d2b8a",
+  "meta": {
+    "great_expectations_version": "1.19.1"
+  },
+  "name": "iot_wm_transaction_4_missingness",
+  "notes": null
+}

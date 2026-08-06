@@ -1,0 +1,452 @@
+{
+  "expectations": [
+    {
+      "description": "Jumlah kolom tepat 25",
+      "id": "6763e704-44db-426a-89c1-f0cd310c9c91",
+      "kwargs": {
+        "value": 25
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_table_column_count_to_equal"
+    },
+    {
+      "description": "Nama DAN urutan kolom sama persis dengan kontrak di datasets.yml",
+      "id": "7bb0c4e1-0193-4183-8fb5-341c8c324d0b",
+      "kwargs": {
+        "column_list": [
+          "gold_id",
+          "device_id",
+          "recorded_at",
+          "loaded_at",
+          "vendor",
+          "device_type",
+          "connectivity",
+          "is_manual",
+          "latitude",
+          "longitude",
+          "plantation_code",
+          "region_name",
+          "company_code",
+          "est_code",
+          "est_newCode",
+          "est_codeSAP",
+          "blockGIS_id",
+          "blockSAP_id",
+          "water_level_cm",
+          "water_level_source",
+          "battery_pct",
+          "signal_dbm",
+          "dq_water_level_valid",
+          "dq_gps_available",
+          "dq_duplicate_flag"
+        ]
+      },
+      "meta": {
+        "catatan": "Urutan ikut diperiksa karena konsumen yang membaca lewat posisi kolom (COPY INTO, Spark tanpa header) akan salah baca bila bergeser.",
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_table_columns_to_match_ordered_list"
+    },
+    {
+      "description": "Tidak ada kolom tak terduga (exact match, bukan subset)",
+      "id": "33cf4202-ae59-408c-be96-e015420d20b8",
+      "kwargs": {
+        "column_set": [
+          "gold_id",
+          "device_id",
+          "recorded_at",
+          "loaded_at",
+          "vendor",
+          "device_type",
+          "connectivity",
+          "is_manual",
+          "latitude",
+          "longitude",
+          "plantation_code",
+          "region_name",
+          "company_code",
+          "est_code",
+          "est_newCode",
+          "est_codeSAP",
+          "blockGIS_id",
+          "blockSAP_id",
+          "water_level_cm",
+          "water_level_source",
+          "battery_pct",
+          "signal_dbm",
+          "dq_water_level_valid",
+          "dq_gps_available",
+          "dq_duplicate_flag"
+        ]
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_table_columns_to_match_set"
+    },
+    {
+      "description": "Tipe gold_id = integer (int64)",
+      "id": "d77494cd-f75d-4030-b367-66cd63aba047",
+      "kwargs": {
+        "column": "gold_id",
+        "type_": "int64"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe device_id = string (str)",
+      "id": "4f2ff207-3bed-41a3-b98d-8b9229af681b",
+      "kwargs": {
+        "column": "device_id",
+        "type_": "str"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe recorded_at = datetime (datetime64[us])",
+      "id": "40e29b4d-2bae-401e-a973-c295cdc4b592",
+      "kwargs": {
+        "column": "recorded_at",
+        "type_": "datetime64[us]"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe loaded_at = datetime (datetime64[us])",
+      "id": "1945145f-d904-4e75-9728-c912fc5144df",
+      "kwargs": {
+        "column": "loaded_at",
+        "type_": "datetime64[us]"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe vendor = string (str)",
+      "id": "3ff58db9-03cf-4c9e-906d-cf1aac991489",
+      "kwargs": {
+        "column": "vendor",
+        "type_": "str"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe device_type = string (str)",
+      "id": "013a3db1-94a4-4caa-a3b9-732e6099b92e",
+      "kwargs": {
+        "column": "device_type",
+        "type_": "str"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe connectivity = string (str)",
+      "id": "eed12eac-a906-47b6-81fb-701da2a9cc7a",
+      "kwargs": {
+        "column": "connectivity",
+        "type_": "str"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe is_manual = boolean (bool)",
+      "id": "2ba44fb6-297c-422b-9a02-a0f81b664b45",
+      "kwargs": {
+        "column": "is_manual",
+        "type_": "bool"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe latitude = string (str)",
+      "id": "e4d8bf2b-2c70-4428-b7ee-c743ac1a47cb",
+      "kwargs": {
+        "column": "latitude",
+        "type_": "str"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe longitude = string (str)",
+      "id": "e29874e2-42c8-483c-9fa0-51781adf43f9",
+      "kwargs": {
+        "column": "longitude",
+        "type_": "str"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe plantation_code = string (str)",
+      "id": "7743875d-f8e2-4f44-981d-22254322d71e",
+      "kwargs": {
+        "column": "plantation_code",
+        "type_": "str"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe region_name = string (str)",
+      "id": "025c263c-54c8-46ff-908b-1b902f1b6984",
+      "kwargs": {
+        "column": "region_name",
+        "type_": "str"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe company_code = string (str)",
+      "id": "0fdafab0-4491-4372-ab77-f68109379cbb",
+      "kwargs": {
+        "column": "company_code",
+        "type_": "str"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe est_code = string (str)",
+      "id": "f87be1b7-0400-40e7-b3c4-4f9e806808f4",
+      "kwargs": {
+        "column": "est_code",
+        "type_": "str"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe est_newCode = string (str)",
+      "id": "fd593ec8-7566-4c19-bc7a-2deb09db2431",
+      "kwargs": {
+        "column": "est_newCode",
+        "type_": "str"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe est_codeSAP = string (str)",
+      "id": "8a82104b-6bec-442f-ace9-ab4249900da1",
+      "kwargs": {
+        "column": "est_codeSAP",
+        "type_": "str"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe blockGIS_id = string (str)",
+      "id": "4d41ae1f-772d-4675-b0dc-fb6ed1fefdab",
+      "kwargs": {
+        "column": "blockGIS_id",
+        "type_": "str"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe blockSAP_id = string (str)",
+      "id": "2010527e-598a-4cd4-acc0-940f54407252",
+      "kwargs": {
+        "column": "blockSAP_id",
+        "type_": "str"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe water_level_cm = decimal (object)",
+      "id": "25e27a79-44ee-45cd-815a-238ffc1e1376",
+      "kwargs": {
+        "column": "water_level_cm",
+        "type_": "object"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe water_level_source = string (str)",
+      "id": "729aa157-c214-4308-a7b9-c3e53c3119c9",
+      "kwargs": {
+        "column": "water_level_source",
+        "type_": "str"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe battery_pct = decimal (object)",
+      "id": "932a7dc8-1875-4335-b7ef-b843ded10393",
+      "kwargs": {
+        "column": "battery_pct",
+        "type_": "object"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe signal_dbm = decimal (object)",
+      "id": "d646a81a-fc98-467d-a8fc-4910c53b9f65",
+      "kwargs": {
+        "column": "signal_dbm",
+        "type_": "object"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe dq_water_level_valid = boolean (bool)",
+      "id": "6ed3a284-7784-4b86-98b3-934c7fd03d80",
+      "kwargs": {
+        "column": "dq_water_level_valid",
+        "type_": "bool"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe dq_gps_available = boolean (bool)",
+      "id": "319cfec3-712c-49f6-a2b0-495c3eae6e6d",
+      "kwargs": {
+        "column": "dq_gps_available",
+        "type_": "bool"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    },
+    {
+      "description": "Tipe dq_duplicate_flag = boolean (bool)",
+      "id": "d89fb426-a01a-49b3-89b5-762de09716e0",
+      "kwargs": {
+        "column": "dq_duplicate_flag",
+        "type_": "bool"
+      },
+      "meta": {
+        "kategori": "1. SCHEMA",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_of_type"
+    }
+  ],
+  "id": "e6e230b4-9781-469a-b2ad-febc013047dd",
+  "meta": {
+    "great_expectations_version": "1.19.1"
+  },
+  "name": "awl_1_schema",
+  "notes": null
+}

@@ -1,0 +1,18 @@
+{
+  "actions": [
+    {
+      "name": "perbarui_data_docs",
+      "site_names": [],
+      "type": "update_data_docs"
+    }
+  ],
+  "id": "811bd4ce-11d8-4c70-b8ca-ed4615756c1f",
+  "name": "cp_ars_schema",
+  "result_format": "SUMMARY",
+  "validation_definitions": [
+    {
+      "id": "49fbbf48-591a-4a9e-81a0-7254c1a83f92",
+      "name": "vd_ars_1_schema"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "expectations": [
+    {
+      "description": "Tabel tidak kosong",
+      "id": "e45fff71-962e-496c-b9d5-a53af1b4bf11",
+      "kwargs": {
+        "min_value": 1
+      },
+      "meta": {
+        "kategori": "2. VOLUME",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_table_row_count_to_be_between"
+    },
+    {
+      "description": "Jumlah baris dalam koridor baseline (1209\u20131636, median historis 1423)",
+      "id": "451bdd6b-1186-457a-afc0-93cf7fa44bc9",
+      "kwargs": {
+        "max_value": 1636,
+        "min_value": 1209
+      },
+      "meta": {
+        "catatan": "Koridor \u00b115% dari median 1 partisi historis (target dikecualikan). Menangkap dua arah: data hilang sebagian dan pemuatan ganda.",
+        "kategori": "2. VOLUME",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_table_row_count_to_be_between"
+    }
+  ],
+  "id": "6fc731e4-79c7-493d-9ba7-d32304562c3b",
+  "meta": {
+    "great_expectations_version": "1.19.1"
+  },
+  "name": "awl_2_volume",
+  "notes": null
+}

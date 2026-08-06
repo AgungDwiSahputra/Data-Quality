@@ -1,0 +1,30 @@
+{
+  "actions": [
+    {
+      "name": "perbarui_data_docs",
+      "site_names": [],
+      "type": "update_data_docs"
+    }
+  ],
+  "id": "a6f01b2b-e930-4c22-b1e5-bffc8d4c9555",
+  "name": "cp_iot_wm_transaction_kualitas",
+  "result_format": "SUMMARY",
+  "validation_definitions": [
+    {
+      "id": "8bb50e51-5d60-43bf-b936-2384c412df97",
+      "name": "vd_iot_wm_transaction_2_volume"
+    },
+    {
+      "id": "4b41f50f-3e00-40f6-b106-af649943c030",
+      "name": "vd_iot_wm_transaction_4_missingness"
+    },
+    {
+      "id": "df32d1fc-4b7d-450b-a4ff-e52c359df46f",
+      "name": "vd_iot_wm_transaction_6_integrity"
+    },
+    {
+      "id": "284597a8-2ce9-4d48-9e00-aafc34118536",
+      "name": "vd_iot_wm_transaction_8_unstructured_data"
+    }
+  ]
+}

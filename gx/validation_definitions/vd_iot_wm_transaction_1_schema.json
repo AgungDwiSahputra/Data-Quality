@@ -1,0 +1,22 @@
+{
+  "data": {
+    "asset": {
+      "id": "a57ca94a-6b38-4812-837c-bc5725fae974",
+      "name": "iot_wm_transaction_raw"
+    },
+    "batch_definition": {
+      "id": "c4f234be-cf86-468c-8ae3-0ad0946f9456",
+      "name": "raw_batch"
+    },
+    "datasource": {
+      "id": "5312cf93-bfe6-4928-b469-b68a653aef31",
+      "name": "iot_wm_transaction_source"
+    }
+  },
+  "id": "54868a1d-776f-4de1-9aed-ce629721e53a",
+  "name": "vd_iot_wm_transaction_1_schema",
+  "suite": {
+    "id": "58366c36-9bca-40f2-9e67-ca202abf1c37",
+    "name": "iot_wm_transaction_1_schema"
+  }
+}

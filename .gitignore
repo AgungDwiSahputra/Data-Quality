@@ -1,0 +1,84 @@
+# ===========================================================================
+# RINGKASAN — apa yang masuk Git, apa yang tidak (detail & alasan di README.md
+# bagian "Apa yang masuk Git, apa yang tidak"):
+#
+#   MASUK   : semua kode (*.py, dqcore/), semua *.yml konfigurasi dataset,
+#             profiles/*.json (baseline), gx/expectations|checkpoints|
+#             validation_definitions/ + gx/great_expectations.yml (definisi
+#             aturan), .env.example, requirements.txt, README.md, CLAUDE.md.
+#   TIDAK   : .env (kredensial — pakai .env.example sebagai contoh),
+#             reports/ (hasil, dibuat ulang), gx/uncommitted/ (riwayat/HTML
+#             Data Docs, dibuat ulang), cache Python, venv, file IDE/OS.
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# Kredensial — JANGAN PERNAH masuk Git.
+# Contoh untuk clone awal: .env.example (S3 + SQL Server) — salin jadi .env,
+# isi nilai sebenarnya. Lihat README.md bagian "Akses S3" / "Akses SQL Server".
+# ---------------------------------------------------------------------------
+.env
+
+# ---------------------------------------------------------------------------
+# Daftar dataset ASLI — memuat struktur data internal organisasi: nama tabel
+# SQL Server, nama bucket S3, nama kolom bisnis, daftar kode wilayah/unit.
+# Contoh generik/placeholder untuk clone awal: datasets.yml.example dan
+# bronze_datasets.yml.example — salin jadi datasets.yml / bronze_datasets.yml,
+# lalu isi dengan dataset Anda sendiri (lihat README.md).
+#
+# CATATAN: kedua file ini sudah pernah ter-commit sebelum baris ini
+# ditambahkan. .gitignore hanya mencegah commit BERIKUTNYA — riwayat commit
+# lama (termasuk yang sudah di-push) masih menyimpan versi lengkapnya sampai
+# riwayatnya ditulis ulang secara terpisah.
+# ---------------------------------------------------------------------------
+datasets.yml
+bronze_datasets.yml
+
+# ---------------------------------------------------------------------------
+# Laporan hasil validasi — dibuat ulang setiap kali validate.py dijalankan.
+# Isinya hasil, bukan definisi, jadi tidak perlu masuk repo. Tidak butuh
+# contoh — folder ini otomatis dibuat oleh validate.py (os.makedirs).
+# ---------------------------------------------------------------------------
+reports/
+
+# ---------------------------------------------------------------------------
+# Situs Data Docs + riwayat hasil validasi.
+# Great Expectations juga menulis gx/.gitignore sendiri berisi "uncommitted/";
+# baris di bawah ini lapis pengaman kalau folder gx/ dipindah. Tidak butuh
+# contoh — dibuat ulang otomatis oleh Great Expectations saat validate.py
+# jalan pertama kali (termasuk uncommitted/config_variables.yml, isinya cuma
+# instance_id acak, bukan kredensial).
+#
+# gx/expectations/, gx/checkpoints/, gx/validation_definitions/ dan
+# gx/great_expectations.yml SENGAJA TIDAK diabaikan — isinya definisi aturan
+# validasi yang memang layak diversikan.
+# ---------------------------------------------------------------------------
+gx/uncommitted/
+
+# ---------------------------------------------------------------------------
+# profiles/ SENGAJA TIDAK diabaikan.
+# Berkas di dalamnya menentukan seluruh ambang batas Integrity & Distribution
+# (termasuk pola string yang diturunkan otomatis), jadi harus ikut terversi
+# supaya hasil validasi bisa direproduksi di mesin lain.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Python — cache & virtual environment. Tidak butuh contoh: venv dibuat
+# sendiri lewat `python -m venv .venv` lalu `pip install -r requirements.txt`.
+# ---------------------------------------------------------------------------
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# ---------------------------------------------------------------------------
+# IDE & OS — spesifik ke mesin masing-masing, tidak relevan untuk siapa pun
+# selain pemiliknya.
+# ---------------------------------------------------------------------------
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+CLAUDE.md

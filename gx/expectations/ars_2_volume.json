@@ -1,0 +1,54 @@
+{
+  "expectations": [
+    {
+      "description": "Tabel tidak kosong",
+      "id": "87a6e179-5398-4808-9ae5-a720cf853bee",
+      "kwargs": {
+        "min_value": 1
+      },
+      "meta": {
+        "kategori": "2. VOLUME",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_table_row_count_to_be_between"
+    },
+    {
+      "description": "Jumlah baris dalam koridor baseline (673\u2013910, median historis 792)",
+      "id": "f6f6e87d-7016-4790-a648-e6fb48d02334",
+      "kwargs": {
+        "max_value": 910,
+        "min_value": 673
+      },
+      "meta": {
+        "catatan": "Koridor \u00b115% dari median 4 partisi historis (target dikecualikan). Menangkap dua arah: data hilang sebagian dan pemuatan ganda.",
+        "kategori": "2. VOLUME",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_table_row_count_to_be_between"
+    },
+    {
+      "description": "Jumlah device_id unik dalam rentang baseline (33\u201333)",
+      "id": "c1ef09e1-da39-4bb2-b483-01d5e87e499a",
+      "kwargs": {
+        "column": "device_id",
+        "max_value": 33,
+        "min_value": 33
+      },
+      "meta": {
+        "catatan": "Hilangnya device_id secara massal menandakan masalah konektivitas atau mapping, bukan fenomena yang diukur.",
+        "kategori": "2. VOLUME",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_unique_value_count_to_be_between"
+    }
+  ],
+  "id": "168e6f15-0c0e-451e-90c5-ec7bf9fa6ff2",
+  "meta": {
+    "great_expectations_version": "1.19.1"
+  },
+  "name": "ars_2_volume",
+  "notes": null
+}

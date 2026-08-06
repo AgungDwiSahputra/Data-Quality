@@ -1,0 +1,91 @@
+{
+  "expectations": [
+    {
+      "description": "gold_id (surrogate key) unik",
+      "id": "770c6a0f-3474-4d77-9aa8-5d0d3ef5e7e1",
+      "kwargs": {
+        "column": "gold_id"
+      },
+      "meta": {
+        "kategori": "5. UNIQUENESS",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_unique"
+    },
+    {
+      "description": "Kunci bisnis (device_id + recorded_at) unik",
+      "id": "099a29eb-7735-4ff6-9a2f-5cd2527d1a39",
+      "kwargs": {
+        "column_list": [
+          "device_id",
+          "recorded_at"
+        ]
+      },
+      "meta": {
+        "catatan": "Ini duplikat yang sesungguhnya berbahaya. Surrogate key selalu unik karena di-generate baru; entitas yang melapor dua kali untuk periode sama akan menggandakan nilai saat agregasi.",
+        "kategori": "5. UNIQUENESS",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_compound_columns_to_be_unique"
+    },
+    {
+      "description": "Flag dq_duplicate_flag dari pipeline seluruhnya False",
+      "id": "f48c5f1b-0a94-48a6-9ac9-836e020e4c5a",
+      "kwargs": {
+        "column": "dq_duplicate_flag",
+        "value_set": [
+          false
+        ]
+      },
+      "meta": {
+        "catatan": "Sinyal duplikat yang sudah dihitung upstream \u2014 paling murah dibaca.",
+        "kategori": "5. UNIQUENESS",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_in_set"
+    },
+    {
+      "description": "Flag dq_block_available dari pipeline seluruhnya True",
+      "id": "387bb4f0-a469-46a8-a4d2-2b1db5d8869f",
+      "kwargs": {
+        "column": "dq_block_available",
+        "value_set": [
+          true
+        ]
+      },
+      "meta": {
+        "catatan": "False berarti device gagal dipetakan ke blok; barisnya tidak bisa dipakai analisis per blok.",
+        "kategori": "5. UNIQUENESS",
+        "severity": "warning"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_in_set"
+    },
+    {
+      "description": "Flag is_manual dari pipeline seluruhnya False",
+      "id": "4ccfed27-aab7-43a4-9e75-b2c390ab8d5a",
+      "kwargs": {
+        "column": "is_manual",
+        "value_set": [
+          false
+        ]
+      },
+      "meta": {
+        "catatan": "ARS = stasiun otomatis. Baris manual seharusnya masuk dataset manual_rainfall (job 'rs').",
+        "kategori": "5. UNIQUENESS",
+        "severity": "warning"
+      },
+      "severity": "critical",
+      "type": "expect_column_values_to_be_in_set"
+    }
+  ],
+  "id": "cfe3ef1e-fa47-4dc1-9a67-a14c43579925",
+  "meta": {
+    "great_expectations_version": "1.19.1"
+  },
+  "name": "ars_5_uniqueness",
+  "notes": null
+}

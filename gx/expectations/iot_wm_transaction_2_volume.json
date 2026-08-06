@@ -1,0 +1,38 @@
+{
+  "expectations": [
+    {
+      "description": "Tabel tidak kosong",
+      "id": "6d72bbed-5761-42d7-99cf-ba6bd85594db",
+      "kwargs": {
+        "min_value": 1
+      },
+      "meta": {
+        "kategori": "2. VOLUME",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_table_row_count_to_be_between"
+    },
+    {
+      "description": "Jumlah baris dalam koridor baseline (1611\u20132180, median historis 1896)",
+      "id": "a26c6e86-d4c0-40f8-9493-3616c2c24e9b",
+      "kwargs": {
+        "max_value": 2180,
+        "min_value": 1611
+      },
+      "meta": {
+        "catatan": "Koridor \u00b115% dari median 2 partisi historis (target dikecualikan). Menangkap dua arah: data hilang sebagian dan pemuatan ganda.",
+        "kategori": "2. VOLUME",
+        "severity": "blocking"
+      },
+      "severity": "critical",
+      "type": "expect_table_row_count_to_be_between"
+    }
+  ],
+  "id": "7d494ba6-52ad-4934-b0be-31adb6776da8",
+  "meta": {
+    "great_expectations_version": "1.19.1"
+  },
+  "name": "iot_wm_transaction_2_volume",
+  "notes": null
+}

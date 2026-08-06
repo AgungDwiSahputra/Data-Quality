@@ -1,0 +1,240 @@
+{
+ "_meta": {
+  "dataset": "iot_wm_transaction",
+  "deskripsi": "TODO — jelaskan isi dataset ini dalam satu kalimat",
+  "dibuat_pada": "2026-08-06T03:01:19.159156+00:00",
+  "partisi_dipakai": 2,
+  "partisi_dikecualikan": [
+   "recorded_year=2026/recorded_month=08/recorded_day=04/bronze_iot_wm_transaction.parquet"
+  ],
+  "PERINGATAN": "Daftar kode di blok 'master' adalah UNION data historis, BUKAN master resmi. Untuk gerbang produksi, ganti dengan hasil query ke tabel master yang sebenarnya."
+ },
+ "volume": {
+  "baris_min": 1896,
+  "baris_max": 1896,
+  "baris_median": 1896,
+  "baris_batas_bawah": 1611,
+  "baris_batas_atas": 2180,
+  "entitas_min": 79,
+  "entitas_max": 79,
+  "periode_per_partisi": 24
+ },
+ "missingness": {
+  "id_transaction": {
+   "null_rate_min": 0.0,
+   "null_rate_max": 0.0,
+   "null_rate_mean": 0.0,
+   "min_proporsi_terisi": 1.0
+  },
+  "sensor_company_id": {
+   "null_rate_min": 0.0,
+   "null_rate_max": 0.0,
+   "null_rate_mean": 0.0,
+   "min_proporsi_terisi": 1.0
+  },
+  "device_id": {
+   "null_rate_min": 0.0,
+   "null_rate_max": 0.0,
+   "null_rate_mean": 0.0,
+   "min_proporsi_terisi": 1.0
+  },
+  "valueRaw": {
+   "null_rate_min": 0.0,
+   "null_rate_max": 0.0,
+   "null_rate_mean": 0.0,
+   "min_proporsi_terisi": 1.0
+  },
+  "calibration": {
+   "null_rate_min": 0.0,
+   "null_rate_max": 0.0,
+   "null_rate_mean": 0.0,
+   "min_proporsi_terisi": 1.0
+  },
+  "calibrationWaterLevel": {
+   "null_rate_min": 0.0,
+   "null_rate_max": 0.0,
+   "null_rate_mean": 0.0,
+   "min_proporsi_terisi": 1.0
+  },
+  "recordTime": {
+   "null_rate_min": 0.0,
+   "null_rate_max": 0.0,
+   "null_rate_mean": 0.0,
+   "min_proporsi_terisi": 1.0
+  },
+  "recordUtcTime": {
+   "null_rate_min": 0.0,
+   "null_rate_max": 0.0,
+   "null_rate_mean": 0.0,
+   "min_proporsi_terisi": 1.0
+  },
+  "uploadTime": {
+   "null_rate_min": 1.0,
+   "null_rate_max": 1.0,
+   "null_rate_mean": 1.0,
+   "min_proporsi_terisi": 0.0
+  },
+  "isManual": {
+   "null_rate_min": 1.0,
+   "null_rate_max": 1.0,
+   "null_rate_mean": 1.0,
+   "min_proporsi_terisi": 0.0
+  }
+ },
+ "distribusi": {},
+ "pola_teks": {
+  "id_transaction": {
+   "pola": [
+    "^[A-Za-z0-9]{24}$"
+   ],
+   "sumber_pola": "diturunkan otomatis",
+   "panjang_min": 24,
+   "panjang_max": 24,
+   "n_unik": 3792
+  },
+  "sensor_company_id": {
+   "pola": [
+    "^[a-z0-9\\-]{36,36}$"
+   ],
+   "sumber_pola": "diturunkan otomatis",
+   "panjang_min": 36,
+   "panjang_max": 36,
+   "n_unik": 79
+  },
+  "device_id": {
+   "pola": [
+    "^[A-Z]{2}\\d{2}\\-[A-Z]{4}\\d{3}[A-Z]{2}\\-[A-Z]{3}\\-\\d{8}$",
+    "^[A-Z]{3}\\-[A-Z0-9]{12}$",
+    "^[A-Z]{3}\\-[A-Z]{2,9}\\d[A-Z]{2,9}$",
+    "^[A-Z]{3}\\-\\d{1,2}[A-Z]{10,11}$"
+   ],
+   "sumber_pola": "diturunkan otomatis",
+   "panjang_min": 16,
+   "panjang_max": 27,
+   "n_unik": 20
+  }
+ },
+ "master": {
+  "sensor_company_id": [
+   "0058ab1a-5b02-4c73-ad88-66401786da4a",
+   "161cfd96-635e-4b3a-b660-1d567546ecc8",
+   "176dcc94-f698-447b-a75d-081e5b8e2b57",
+   "1f7db89f-895c-45d5-8f26-29b63bbfb35d",
+   "262c7ab8-3b43-49af-9849-6aaf45a4a0a1",
+   "275366d1-c733-4630-9a9c-a1a4ff20bf9b",
+   "2f4ecf39-9d23-4e51-9169-84666e571211",
+   "32276ca0-2ff9-4103-958c-6523a8fd010b",
+   "32b24d01-166a-42a2-80b0-13373c0d0046",
+   "34271fbe-2f16-4041-a234-33f223b237e0",
+   "34f51019-8ab4-499e-b399-3d298aa54a3f",
+   "36b4b736-02ec-4a16-b43d-b3a5c05d9ca3",
+   "3ca2d5e2-6c39-4724-a8d9-d166a269d243",
+   "3f814de5-8f67-47b2-980f-8e8493a6e0ef",
+   "43218a31-75f8-40da-be06-e9cc711716fc",
+   "432d961e-1880-4b18-8d4c-332cca95a49e",
+   "44558cf8-b8f1-479d-98f4-0dd324fa18fc",
+   "45d405ad-29ae-4fd2-921f-165c348478ae",
+   "49fd8a22-808a-4bba-b405-99d59894b978",
+   "4ab5c381-14ba-43ee-ac6a-011f07eaed2a",
+   "54dca5b5-2802-47cd-bf63-cb9ee26f21ac",
+   "59f8bbc8-b21c-47d7-81db-5ae6373354fa",
+   "5b529ed6-14a6-4c19-82a9-4e3d6faa4329",
+   "5db75694-f3f3-4eed-9994-bb3e92a425aa",
+   "606a1b0e-b08b-41c3-9569-e9713b5ed8ab",
+   "6660d895-faaf-4d64-8f2b-63ec23ca02b2",
+   "693a417c-6dcc-4c46-9271-272b13d50bd2",
+   "6a32abad-2467-4b75-95d8-97841206b72f",
+   "6a535d6c-94f8-45ec-975b-d3ed14210812",
+   "6c0ec551-8f2d-41f9-b052-f2227206d5f9",
+   "6cca6bcd-8d85-4238-b07c-e282f4590a4e",
+   "70f0e25d-6a60-4899-b370-5c7f2a886a39",
+   "7292d242-139c-4e9e-95cb-6cf2d1035ce9",
+   "7efcaaf8-5130-4bc4-a6eb-c3e389490ab4",
+   "7f4d7705-f06d-41d5-8702-2157e6c6e2c4",
+   "8278a68a-be14-4f38-ab80-69fbc00c4f72",
+   "8478f458-634c-4fd1-a293-daa57f926653",
+   "8a2e0a0c-22ba-4d68-814b-2e44c5a1ff82",
+   "8c5a8331-6f00-42e4-9234-2849f9c752e7",
+   "8d8cffac-f804-418f-88b4-8532c77de447",
+   "8e28b960-abb1-4962-bdb0-9f08da08d101",
+   "8f255699-bc69-481c-877e-739a75299238",
+   "9617a1f7-d71f-437f-9ed7-d2844985e572",
+   "96796baa-3f0f-4695-89af-31e47b0fe9a6",
+   "96e495f6-0c38-40d1-93a9-ac61493cf240",
+   "97b1de1f-5c45-43b7-97f8-a64891f3dc45",
+   "9ee575a1-be83-42fa-9a1c-9465ae64d111",
+   "a20bf5bc-bf7d-4a4a-8e97-c09e00504c6f",
+   "a725842b-d971-44fa-861c-89ccc0852763",
+   "a93a9a14-85a8-460f-bfc6-fc9946d14d2b",
+   "b4cb5820-94e1-4bee-bac5-c213937d3947",
+   "b6631fda-d396-49a6-9233-7d0948822d06",
+   "b8f4ad06-0f46-4fa3-9aae-485322f1bcce",
+   "bb00483f-e367-4d66-98d7-1d85f1d542a4",
+   "bc684598-b325-436f-9511-7020a8101eed",
+   "bc94f7e6-db82-4968-8598-0eb4679cc099",
+   "bef68021-bbae-48d2-9bb1-86b9eb03aa11",
+   "c0b715a5-3322-4fd5-885a-4872836c6114",
+   "c349118d-2247-41f1-b5c2-a6e5947b4840",
+   "cdc0d2f6-3b82-4b2d-ad6b-3c34a0228ede",
+   "d1cdbf06-9dfb-470f-b873-2d7824a3ba88",
+   "d526e97f-292c-4c4b-8c1d-e9648db4be3e",
+   "d6a16df7-10a1-49a6-b201-b02e5f3fb0b7",
+   "da901e2b-09ff-41e4-882f-84634895fdcc",
+   "e3db4a67-6f5f-4842-9d5a-131fb782ed62",
+   "e614292c-5283-4df2-992e-5a02785cbfaf",
+   "e6c65e2f-381c-4790-924c-f9ab708740ab",
+   "e8ee3a14-6530-40ab-8e89-e9e379f00e74",
+   "ea2e0090-3a1f-4663-b65b-fd3d65e8e537",
+   "ea496221-1f09-42a4-9fc8-7399b6f6e2a7",
+   "ecd050fe-7bef-4e92-a1c9-fa92ff06b247",
+   "ee08d54c-ad23-42dd-b8e5-b2117b8155e6",
+   "f096db4c-3c2d-4fbc-afb6-644389921190",
+   "f2329d8c-e180-4026-befe-682ba928aa9d",
+   "f3b78b6b-5397-4467-b136-c5104c7b8be1",
+   "f9229e9f-a574-4f1d-8bd1-29b668176d27",
+   "f942e3d8-8d90-4711-978f-25ce5bbd2580",
+   "f9bebf53-aa69-4512-acc8-f3f2f5e21430",
+   "fef34f7e-b484-4939-916a-1b417fdc55bc"
+  ],
+  "device_id": [
+   "MT02-GMPL007RF-GWB-83886080",
+   "MT02-GMPL014RF-GWB-83886080",
+   "MTI-0E1Y0GRAFCNJ",
+   "MTI-0WDTYG95LSFT",
+   "MTI-0Z9AH56M36KC",
+   "MTI-1H70QHPPF1RS",
+   "MTI-1SOPVHR4599L",
+   "MTI-28JX76Y0381Y",
+   "MTI-51IGYAYZXXLX",
+   "MTI-6PVHSL0KBVSR",
+   "MTI-7SOPRVRTOGPX",
+   "MTI-7U1CE7K12ZVM",
+   "MTI-8J9X8ZYUJ8PG",
+   "MTI-B5A5MJ1ITFZ5",
+   "MTI-D1L5UI6B1BJX",
+   "MTI-GJXZ9O3S9Y6E",
+   "MTI-HOK1KZFE01O1",
+   "MTI-IMWNSSQVE3PD",
+   "MTI-JK2JTG6UZ06A",
+   "MTI-SE2UUGQGSEUH"
+  ]
+ },
+ "relasi": {},
+ "relasi_pelanggaran_historis": {},
+ "anomali_baseline": {
+  "nilai_di_luar_rentang": [],
+  "catatan": "0 nilai di luar rentang fisik DIKELUARKAN dari baseline distribusi. Kalau ikut, mean & stdev baseline tercemar dan check distribusi jadi tumpul."
+ },
+ "per_partisi": [
+  {
+   "partisi": "recorded_year=2026/recorded_month=07/recorded_day=20/bronze_iot_wm_transaction.parquet",
+   "baris": 1896,
+   "tanggal": "2026-07-20T00:00:00"
+  },
+  {
+   "partisi": "recorded_year=2026/recorded_month=08/recorded_day=03/bronze_iot_wm_transaction.parquet",
+   "baris": 1896,
+   "tanggal": "2026-08-03T00:00:00"
+  }
+ ]
+}
