@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Validasi kualitas data — 9 dimensi, multi-dataset, lokal maupun S3.
+Validasi kualitas data — 12 dimensi, multi-dataset, lokal maupun S3.
 
 KODE INTI. Kamu jarang perlu menyentuhnya.
 Daftar dataset ada di file terpisah: datasets.yml
 
-Sembilan dimensi yang diperiksa:
+Dua belas dimensi yang diperiksa:
   1. SCHEMA          schema evolution: jumlah, nama, tipe kolom (BUKAN urutan
                      — Parquet read-by-name)
   2. VOLUME          ukuran data tidak terlalu sedikit / meluap
@@ -19,6 +19,19 @@ Sembilan dimensi yang diperiksa:
   9. REKONSILIASI    row count & kelengkapan kolom terhadap SQL Server
                      SUMBER (opsional — hanya aktif kalau dataset
                      mendeklarasikan 'sumber.sql_server.tabel'; lihat --no-reconcile)
+  10. FORMAT & PATTERN COMPLIANCE   kepatuhan terhadap standar format bisnis
+                     eksternal via 'regex:' (nomor telepon, tanggal ISO 8601,
+                     jumlah digit KTP, dst.) — beda dari 'pola:' dimensi 8
+                     yang diturunkan dari data historis, ini assertion pasti
+  11. COST & STORAGE SAFETY   ukuran BERKAS (bukan isi data) di luar rentang
+                     wajar via 'ukuran_berkas.rentang:' di level dataset —
+                     berkas kosong/nyaris kosong atau membengkak tak wajar.
+                     Cuma mengecek partisi yang sedang divalidasi, BUKAN
+                     audit jumlah berkas kecil di seluruh prefix S3.
+  12. LINEAGE &      kontrak governance via 'meta_audit.wajib:' (settable di
+      AUDITABILITY   'default:' dan/atau ditimpa per dataset) — kolom audit
+                     trail (mis. bronze_inserted_at) wajib ada di BERKAS
+                     (bukan cuma di 'kolom:') dan tidak pernah null.
 
 CARA PAKAI:
     python validate.py --list                          # dataset terdaftar
@@ -80,23 +93,53 @@ def muat_profil(dataset: str) -> dict:
         return json.load(fh)
 
 
-def validasi_partisi(spec, prof, partisi, mode, now, reconcile=True):
-    df_raw = baca_parquet(partisi)
-    hasil, df_work = checks.jalankan_semua(spec, prof, df_raw, partisi, mode, now,
-                                           reconcile=reconcile)
-    meta = {
+def _meta_dasar(spec, partisi, mode, now, rows=0, cols=0):
+    return {
         "dataset": spec.nama,
         "deskripsi": spec.deskripsi,
         "partisi": partisi.label,
         "uri": partisi.uri,
         "sumber": partisi.sumber,
         "lokasi": ringkas_sumber(spec, partisi.sumber),
-        "rows": len(df_raw),
-        "cols": len(df_raw.columns),
+        "rows": rows,
+        "cols": cols,
         "mode": mode,
-        "baseline_partisi": prof["_meta"]["partisi_dipakai"],
+        "baseline_partisi": "-",
         "run_at": now.strftime("%Y-%m-%d %H:%M:%S"),
     }
+
+
+def validasi_partisi(spec, prof, partisi, mode, now, reconcile=True):
+    # Berkas yang GAGAL TOTAL diparse (0 byte, korup, terpotong) membuat
+    # baca_parquet() melempar exception SEBELUM sempat sampai ke satu pun
+    # dari 11 dimensi — parser Parquet tidak punya cara "baca sebagian".
+    # Ditangkap di sini supaya jadi satu temuan dimensi 11 yang rapi, bukan
+    # traceback Python yang menghentikan --sweep di tengah jalan. df_raw/
+    # df_work sengaja None: tidak ada dataframe yang bisa dibentuk sama
+    # sekali — dqcore.docs.bangun() aman menerima ini karena hasil di bawah
+    # tidak punya _expectation_obj, jadi tidak pernah men-dereference df_raw/df_work.
+    try:
+        df_raw = baca_parquet(partisi)
+    except Exception as exc:                                       # noqa: BLE001
+        hasil = [{
+            "category": "11. COST & STORAGE SAFETY",
+            "description": "Berkas bisa dibaca sebagai Parquet (tidak kosong/korup)",
+            "expectation": None, "success": False, "severity": "blocking",
+            "note": f"Berkas GAGAL TOTAL diparse sebagai Parquet: {type(exc).__name__}: {exc}. "
+                    f"Kemungkinan berkas 0 byte, korup, atau ekstraksi upstream berhenti di "
+                    f"tengah jalan tapi berkas tetap 'sukses' mendarat. Dimensi 1-10 tidak "
+                    f"bisa dijalankan sama sekali — tidak ada dataframe untuk divalidasi.",
+            "error": f"{type(exc).__name__}: {exc}", "observed": None,
+            "unexpected_count": None, "unexpected_percent": None, "unexpected_sample": None,
+            "_expectation_obj": None, "_raw": False,
+        }]
+        meta = _meta_dasar(spec, partisi, mode, now)
+        return hasil, checks.ringkas(hasil), meta, None, None
+
+    hasil, df_work = checks.jalankan_semua(spec, prof, df_raw, partisi, mode, now,
+                                           reconcile=reconcile)
+    meta = _meta_dasar(spec, partisi, mode, now, rows=len(df_raw), cols=len(df_raw.columns))
+    meta["baseline_partisi"] = prof["_meta"]["partisi_dipakai"]
     return hasil, checks.ringkas(hasil), meta, df_raw, df_work
 
 

@@ -35,6 +35,7 @@ class Partisi:
     label: str                     # nama pendek untuk laporan
     tanggal: datetime | None       # tanggal partisi, None kalau tidak bisa ditentukan
     sumber: str                    # "lokal" | "s3"
+    ukuran_bytes: int | None = None  # ukuran berkas, dipakai dimensi 11 (COST & STORAGE SAFETY)
 
     @property
     def is_s3(self) -> bool:
@@ -120,7 +121,8 @@ def daftar_partisi(spec, sumber: str) -> list[Partisi]:
                 f"Tidak ada file yang cocok dengan pola:\n  {spec.lokal}\n"
                 f"Periksa kembali 'sumber.lokal' untuk dataset {spec.nama!r} di datasets.yml.")
         return [Partisi(uri=b, label=os.path.basename(b),
-                        tanggal=_tanggal_dari_nama(b), sumber="lokal") for b in berkas]
+                        tanggal=_tanggal_dari_nama(b), sumber="lokal",
+                        ukuran_bytes=os.path.getsize(b)) for b in berkas]
 
     if not spec.s3:
         raise SourceError(
@@ -151,7 +153,8 @@ def daftar_partisi(spec, sumber: str) -> list[Partisi]:
             # Label = bagian partisi saja, supaya laporan tidak kepanjangan.
             label = kunci[len(prefix):].strip("/") or os.path.basename(kunci)
             hasil.append(Partisi(uri=uri, label=label,
-                                 tanggal=_tanggal_dari_nama(kunci), sumber="s3"))
+                                 tanggal=_tanggal_dari_nama(kunci), sumber="s3",
+                                 ukuran_bytes=obj.get("Size")))
     if not hasil:
         raise SourceError(
             f"Tidak ada objek .parquet di bawah {spec.s3!r}.\n"
@@ -170,7 +173,8 @@ def pilih_partisi(partisi: list[Partisi], tanggal: str | None,
         # boleh juga path yang tidak terdaftar (mis. file di luar folder biasa)
         if os.path.exists(berkas):
             return Partisi(uri=berkas, label=os.path.basename(berkas),
-                           tanggal=_tanggal_dari_nama(berkas), sumber="lokal")
+                           tanggal=_tanggal_dari_nama(berkas), sumber="lokal",
+                           ukuran_bytes=os.path.getsize(berkas))
         raise SourceError(f"Partisi {berkas!r} tidak ditemukan di antara "
                           f"{len(partisi)} partisi yang tersedia.")
     if tanggal:

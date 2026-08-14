@@ -181,7 +181,7 @@ python validate.py --list       # jalan tanpa .env sama sekali (dataset lokal)
 
 ---
 
-## Sembilan dimensi yang diperiksa
+## Dua belas dimensi yang diperiksa
 
 | Dimensi | Diaktifkan oleh | Contoh yang ditangkap |
 |---|---|---|
@@ -194,6 +194,9 @@ python validate.py --list       # jalan tanpa .env sama sekali (dataset lokal)
 | **7. Distribution** | `profil_distribusi:` | sensor macet, pergeseran level, bentuk sebaran berubah |
 | **8. Data Cleanliness & Encoding** | `kolom:` (string) | format ID menyimpang, karakter kontrol, mojibake dari konversi kolasi SQL Server -> UTF-8 |
 | **9. Rekonsiliasi Sumber** | `sumber.sql_server.tabel:` | baris tercecer/terduplikasi saat pindah ke bronze, kolom sumber yang tidak terbawa |
+| **10. Format & Pattern Compliance** | `regex:` | format nomor telepon salah, tanggal bukan ISO 8601, KTP/kartu identitas kurang digit |
+| **11. Cost & Storage Safety** | `ukuran_berkas.rentang:` | berkas 0 byte/nyaris kosong yang tetap "sukses" mendarat, berkas membengkak tak wajar (infinite loop ekstraksi) |
+| **12. Lineage & Auditability** | `meta_audit.wajib:` | berkas mendarat tanpa `bronze_inserted_at`/`source_system_name`/`job_run_id`, atau kolom itu ada tapi sebagian null |
 
 Dimensi yang tidak punya bahan **dilewati dan dicatat alasannya** — tidak pernah
 terlihat seperti lulus.
@@ -233,6 +236,84 @@ baseline `profiles/*.json`. Karena itu ia butuh koneksi jaringan/VPN + kredensia
 SQL Server (lihat "Akses SQL Server" di bawah) — kalau belum tersedia, dimensi
 ini dilewati dengan alasan yang mengutip error koneksinya, bukan menghentikan
 validasi dataset lain. Lewati secara sengaja dengan `--no-reconcile`.
+
+Dimensi 10 (`regex:`) sengaja dipisah dari dimensi 8 (`pola:`) walau sama-sama
+berbasis regex, karena menjawab pertanyaan yang berbeda:
+- **Dimensi 8** — "apakah bentuknya konsisten dengan yang pernah terlihat di
+  data historis?" Pola `diturunkan otomatis` dari data (atau `pola:` eksplisit),
+  soal kebersihan karakter & drift struktural (mojibake, karakter kontrol).
+- **Dimensi 10** — "apakah sesuai standar format bisnis yang ditetapkan dari
+  luar?" `regex:` **tidak pernah** diturunkan dari data — nilai bisa saja
+  bersih secara karakter (lolos dimensi 8) tapi tetap gagal di sini kalau
+  strukturnya menyimpang dari standar: nomor telepon tanpa kode area, tanggal
+  bukan `YYYY-MM-DD` (ISO 8601), KTP kurang dari 16 digit, dst. Sifatnya pasti,
+  sama seperti `rentang:` di dimensi Distribution — bukan hasil pembelajaran
+  dari histori.
+
+```yaml
+kolom:
+  - nama: no_hp
+    tipe: string
+    regex: "^08\\d{9,11}$"          # satu format wajib
+  - nama: kode_pos
+    tipe: string
+    regex: ["^\\d{5}$", "^ID-\\d{5}$"]   # boleh salah satu dari beberapa format
+```
+
+Dimensi 11 (`ukuran_berkas:`) beda dari sepuluh dimensi lain: yang diperiksa
+properti **BERKAS** (jumlah byte), bukan isi datanya — karena itu dideklarasikan
+di level DATASET, bukan di dalam `kolom:` seperti `rentang:`/`regex:`. Motivasinya
+biaya: S3 mengenakan tarif per request (PUT/GET), jadi berkas yang jauh lebih
+kecil dari wajar berulang di banyak partisi ("small file problem") membengkakkan
+biaya query Athena/Spark, sementara berkas yang membengkak tak wajar biasanya
+tanda pipeline ekstraksi rusak (mis. infinite loop).
+
+```yaml
+datasets:
+  ars:
+    ukuran_berkas:
+      rentang: [10000, 524288000]   # 10 KB - 500 MB, dalam bytes
+    ...
+```
+
+**Cakupan yang perlu diketahui**: dimensi ini mengecek ukuran SATU berkas yang
+sedang divalidasi (partisi target), BUKAN mengaudit jumlah berkas di seluruh
+prefix S3 sekaligus. Mendeteksi "jutaan berkas kecil di seluruh bucket" secara
+menyeluruh butuh me-list seluruh objek di prefix — operasi yang beda kelas dari
+"validasi satu partisi" yang jadi model sebelas dimensi ini, dan ironisnya
+operasi list itu sendiri memakan request S3 dalam jumlah besar. Berkas yang
+**gagal total diparse** (0 byte, korup, terpotong) ditangani terpisah di
+`validate.py` SEBELUM `baca_parquet()` dipanggil — parser Parquet tidak bisa
+"membaca sebagian", jadi kegagalan itu langsung dilaporkan sebagai temuan
+dimensi 11 alih-alih menghentikan `validate.py`/`--sweep` dengan traceback Python.
+
+Dimensi 12 (`meta_audit.wajib:`) menegakkan kontrak **governance/lineage**, bukan
+kontrak schema biasa. Bedanya dengan dimensi 1 (Schema): dimensi 1 cuma menjamin
+berkas COCOK dengan `kolom:` yang dideklarasikan di `datasets.yml` — kalau
+penulis `datasets.yml` lupa mencantumkan kolom audit trail (mis.
+`bronze_inserted_at`) di `kolom:` sama sekali, dimensi 1 tidak pernah tahu kolom
+itu seharusnya ada. Dimensi 12 diperiksa terhadap skema **berkas** langsung
+(bukan `kolom:`), jadi tetap tegak walau kontraknya sendiri cacat — dan kolom
+yang terdaftar wajib **tidak pernah null**, terlepas dari `wajib:` kolom itu di
+`kolom:` (audit trail yang bolong sebagian sama rusaknya dengan yang hilang total).
+
+```yaml
+default:
+  # Berlaku ke semua dataset — cocok untuk standar lineage organisasi yang
+  # seharusnya seragam di seluruh data lake.
+  meta_audit:
+    wajib: [bronze_inserted_at, source_system_name, job_run_id]
+
+datasets:
+  ars:
+    # Tidak perlu apa-apa di sini kalau mengikuti standar default di atas.
+    ...
+  master_estate:
+    # Timpa TOTAL (termasuk boleh dikosongkan) untuk dataset yang memang
+    # tidak relevan, mis. master/dimensi tanpa siklus hidup Bronze.
+    meta_audit:
+      wajib: []
+```
 
 ---
 

@@ -45,6 +45,14 @@ class ColumnSpec:
     nilai_sah: list | None = None           # value set eksplisit
     referensi: bool = False                 # ikut divalidasi terhadap master
     profil_distribusi: bool = False         # ikut check DISTRIBUTION
+    # regex WAJIB (dimensi 10) — standar format bisnis eksternal, BUKAN
+    # diturunkan dari data historis seperti 'pola' (dimensi 8). Field
+    # terpisah dari 'pola' supaya tidak ambigu: 'pola' menjawab "apakah
+    # bentuknya konsisten dengan yang pernah terlihat", 'regex' menjawab
+    # "apakah sesuai standar format yang ditetapkan" (mis. nomor telepon,
+    # tanggal ISO 8601, jumlah digit KTP) — dua pertanyaan berbeda meski
+    # sama-sama regex di baliknya.
+    regex: list[str] | None = None
 
     @property
     def numerik(self) -> bool:
@@ -66,6 +74,20 @@ class DatasetSpec:
     sql_tabel: str | None = None            # mis. "dbo.T_IOT_WM_Transaction"
     sql_kolom_waktu: str | None = None      # kolom WHERE filter di SQL Server
     sql_offset_jam: float = 0.0             # geser window dari tengah malam
+
+    # ---- keamanan ukuran berkas & biaya S3 (dimensi 11, opsional) ----
+    # Properti BERKAS, bukan properti kolom — makanya di level dataset,
+    # bukan di dalam 'kolom:'. Batas bawah menangkap berkas kosong/nyaris
+    # kosong (ekstraksi gagal diam-diam); batas atas menangkap berkas yang
+    # membengkak tak wajar (mis. infinite loop saat ekstraksi).
+    ukuran_berkas_rentang: tuple | None = None   # (min_bytes, max_bytes)
+
+    # ---- ketertelusuran data / audit trail (dimensi 12, opsional) ----
+    # Kontrak GOVERNANCE, bukan kontrak schema biasa — makanya terpisah dari
+    # 'kolom:'/dimensi 1. Bisa diisi di blok 'default:' (berlaku ke semua
+    # dataset) dan/atau ditimpa total per dataset (termasuk boleh dikosongkan
+    # untuk dataset yang memang tidak relevan, mis. master/dimensi).
+    meta_audit_wajib: list[str] = field(default_factory=list)
 
     # ---- kunci & granularitas ----
     surrogate_key: str | None = None
@@ -124,6 +146,10 @@ class DatasetSpec:
     @property
     def kolom_profil(self) -> list[ColumnSpec]:
         return [k for k in self.kolom if k.profil_distribusi]
+
+    @property
+    def kolom_format(self) -> list[ColumnSpec]:
+        return [k for k in self.kolom if k.regex]
 
     def get(self, nama: str) -> ColumnSpec | None:
         for k in self.kolom:
@@ -202,6 +228,10 @@ def _kolom_dari_yaml(item, konteks) -> ColumnSpec:
     if isinstance(pola, str):
         pola = [pola]
 
+    regex = item.get("regex")
+    if isinstance(regex, str):
+        regex = [regex]
+
     return ColumnSpec(
         nama=nama,
         tipe=tipe,
@@ -213,6 +243,7 @@ def _kolom_dari_yaml(item, konteks) -> ColumnSpec:
         nilai_sah=item.get("nilai_sah"),
         referensi=bool(item.get("referensi", False)),
         profil_distribusi=bool(item.get("profil_distribusi", False)),
+        regex=regex,
     )
 
 
@@ -267,6 +298,24 @@ def _dataset_dari_yaml(nama: str, data: dict, default: dict) -> DatasetSpec:
             f"[{konteks}.sumber.sql_server] 'kolom_waktu' diisi tapi 'tabel' "
             f"kosong — tidak ada tabel yang bisa difilter.")
 
+    ukuran_berkas = data.get("ukuran_berkas") or {}
+    ub_rentang = ukuran_berkas.get("rentang")
+    if ub_rentang is not None:
+        if (not isinstance(ub_rentang, (list, tuple)) or len(ub_rentang) != 2
+                or ub_rentang[0] is None or ub_rentang[1] is None):
+            raise SpecError(
+                f"[{konteks}.ukuran_berkas.rentang] harus [min, max] dalam bytes. "
+                f"Ditemukan: {ub_rentang!r}")
+        ub_rentang = (float(ub_rentang[0]), float(ub_rentang[1]))
+
+    # Dataset yang mendeklarasikan 'meta_audit:' sendiri (termasuk daftar
+    # kosong, untuk opt-out) MENIMPA TOTAL default global — bukan digabung.
+    # Tanpa 'meta_audit:' sama sekali di dataset, warisi dari default.
+    if "meta_audit" in data:
+        meta_audit_wajib = list((data.get("meta_audit") or {}).get("wajib") or [])
+    else:
+        meta_audit_wajib = list((default.get("meta_audit") or {}).get("wajib") or [])
+
     relasi = _pasangan(data, "relasi", konteks)
     sama = _pasangan(data, "sama_nilai", konteks)
     urutan = _pasangan(data, "urutan_waktu", konteks)
@@ -293,6 +342,8 @@ def _dataset_dari_yaml(nama: str, data: dict, default: dict) -> DatasetSpec:
         sql_tabel=sql_tabel,
         sql_kolom_waktu=sql_kolom_waktu,
         sql_offset_jam=float(sql_server.get("offset_jam", 0) or 0),
+        ukuran_berkas_rentang=ub_rentang,
+        meta_audit_wajib=meta_audit_wajib,
         surrogate_key=kunci.get("surrogate"),
         business_key=list(kunci.get("bisnis") or []),
         kolom_waktu=kunci.get("waktu"),

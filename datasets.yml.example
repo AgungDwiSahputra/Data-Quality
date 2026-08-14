@@ -37,6 +37,15 @@ default:
     harian: 2.0              # pipeline harian: data H-1 masuk paling lambat H+1
     backfill: 260.0          # muat ulang historis: lag besar itu wajar
 
+  # Opsional — dimensi 12 (LINEAGE & AUDITABILITY). Berlaku ke SEMUA dataset
+  # di bawah kecuali dataset itu mendeklarasikan 'meta_audit:' sendiri (lihat
+  # 'contoh_master_unit' di bawah untuk contoh opt-out). Diperiksa terhadap
+  # skema BERKAS langsung, bukan cuma daftar 'kolom:' — jadi kontrak audit
+  # ini tetap tegak walau 'kolom:' sendiri lupa mendaftarkan kolomnya. Hapus
+  # blok ini sepenuhnya (di sini maupun di tiap dataset) kalau tidak dipakai.
+  meta_audit:
+    wajib: [bronze_inserted_at, source_system_name, job_run_id]
+
 datasets:
 
   # =========================================================================
@@ -61,6 +70,15 @@ datasets:
       #   kolom_waktu: recorded_at
       #   offset_jam: 0
 
+    # Opsional — dimensi 11 (COST & STORAGE SAFETY). Properti BERKAS (bytes),
+    # bukan properti kolom, jadi levelnya di sini (dataset), bukan di dalam
+    # 'kolom:'. Hapus blok ini kalau tidak dipakai; dimensi 11 otomatis
+    # dilewati bila tidak diisi. Cuma mengecek partisi yang sedang divalidasi
+    # — BUKAN audit jumlah berkas kecil di seluruh prefix S3 (lihat README.md
+    # bagian dimensi 11 untuk kenapa itu di luar cakupan).
+    # ukuran_berkas:
+    #   rentang: [10000, 524288000]   # 10 KB - 500 MB, dalam bytes
+
     kunci:
       surrogate: id_baris             # kunci teknis, selalu unik
       bisnis: [unit_id, recorded_at]  # kunci yang benar-benar bermakna
@@ -73,8 +91,15 @@ datasets:
     #   referensi: true     -> nilainya dicek terhadap daftar master
     #   profil_distribusi   -> ikut check DISTRIBUTION (mean, kuantil, KL)
     #   rentang             -> batas fisik; batas ini mengalahkan baseline
-    #   pola                -> regex eksplisit; kalau dikosongkan, pola
-    #                          DITURUNKAN OTOMATIS dari data historis
+    #   pola                -> regex, dimensi 8 (DATA CLEANLINESS & ENCODING).
+    #                          Kalau dikosongkan, pola DITURUNKAN OTOMATIS
+    #                          dari data historis — soal konsistensi bentuk.
+    #   regex               -> regex, dimensi 10 (FORMAT & PATTERN COMPLIANCE).
+    #                          TIDAK PERNAH diturunkan otomatis — assertion
+    #                          standar format bisnis eksternal (nomor telepon,
+    #                          tanggal ISO 8601, dst.), beda tujuan dari 'pola'
+    #                          walau sama-sama regex. Boleh satu string atau
+    #                          list ["...", "..."] untuk beberapa format sah.
     kolom:
       - {nama: id_baris,       tipe: integer}
       - {nama: unit_id,        tipe: string,  referensi: true}
@@ -90,6 +115,10 @@ datasets:
         satuan: "unit"             # bukan yang kebetulan terlihat di data
         profil_distribusi: true    # <- mengaktifkan dimensi DISTRIBUTION
       - {nama: dq_nilai_valid, tipe: boolean}
+      - nama: kontak_telepon
+        tipe: string
+        wajib: false
+        regex: "^08\\d{9,11}$"     # <- mengaktifkan dimensi FORMAT & PATTERN COMPLIANCE
 
     # Pasangan kolom yang hubungannya harus tetap konsisten (parent -> child).
     relasi:
@@ -126,6 +155,13 @@ datasets:
     sumber:
       s3: "s3://${S3_BUCKET_NAME}/datalake/gold/contoh_master_unit"
       partisi: snapshot
+
+    # Opt-out dari standar 'meta_audit' global di blok 'default:' — dataset
+    # master/dimensi seperti ini biasanya tidak punya siklus hidup Bronze
+    # yang perlu ditelusuri per baris. Timpa TOTAL (kosongkan), bukan hapus
+    # baris ini — menghapusnya berarti IKUT standar global, bukan opt-out.
+    meta_audit:
+      wajib: []
 
     kolom:
       - {nama: kode, tipe: string}

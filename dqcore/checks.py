@@ -1,10 +1,10 @@
 """
-Mesin 9 dimensi kualitas data — seluruh expectation diturunkan dari DatasetSpec.
+Mesin 12 dimensi kualitas data — seluruh expectation diturunkan dari DatasetSpec.
 
 KODE INTI. Jarang perlu disentuh.
 Menambah dataset = menambah blok di datasets.yml, bukan menambah kode di sini.
 
-Sembilan dimensi:
+Dua belas dimensi:
   1. SCHEMA          schema evolution: jumlah, nama, tipe kolom (BUKAN urutan
                      — Parquet read-by-name, lihat check_schema())
   2. VOLUME          ukuran data tidak terlalu sedikit / meluap
@@ -18,6 +18,19 @@ Sembilan dimensi:
      terstruktur, lihat check_cleanliness())
   9. REKONSILIASI    row count & kelengkapan kolom vs SQL Server (opsional)
      SUMBER
+  10. FORMAT & PATTERN COMPLIANCE   kepatuhan terhadap standar format bisnis
+     eksternal (mis. nomor telepon, tanggal ISO 8601, jumlah digit KTP) —
+     lihat check_format_compliance() untuk bedanya dengan dimensi 8
+  11. COST & STORAGE SAFETY   ukuran BERKAS (bukan isi data) di luar rentang
+     wajar — berkas kosong/nyaris kosong atau membengkak tak wajar. Berkas
+     0 byte ditangani lebih awal di validate.py (lihat catatan di sana),
+     bukan di sini — parser Parquet gagal total sebelum sempat sampai ke
+     dimensi mana pun.
+  12. LINEAGE &      kontrak GOVERNANCE (meta_audit.wajib) untuk kolom
+     AUDITABILITY    audit trail (mis. bronze_inserted_at, source_system_name,
+                     job_run_id) — beda dari dimensi 1: ini menegakkan
+                     STANDAR ORGANISASI walau penulis datasets.yml lupa
+                     mendaftarkannya di 'kolom:' sama sekali
 """
 
 from __future__ import annotations
@@ -33,6 +46,9 @@ CATEGORIES = [
     "5. UNIQUENESS", "6. INTEGRITY", "7. DISTRIBUTION",
     "8. DATA CLEANLINESS & ENCODING",
     "9. REKONSILIASI SUMBER",
+    "10. FORMAT & PATTERN COMPLIANCE",
+    "11. COST & STORAGE SAFETY",
+    "12. LINEAGE & AUDITABILITY",
 ]
 
 # Regex "kotoran" yang tidak boleh ada di kolom teks apa pun. Motivasi utamanya
@@ -136,12 +152,19 @@ def _observasi(detail: dict):
 # Penyiapan data
 # ---------------------------------------------------------------------------
 
-def siapkan(spec, df_raw: pd.DataFrame) -> pd.DataFrame:
+def siapkan(spec, df_raw: pd.DataFrame, partisi=None) -> pd.DataFrame:
     """
     Tambahkan kolom bantu turunan yang dibutuhkan check.
     Semua diawali '_' agar tidak bentrok dengan kolom asli.
     """
     df = df_raw.copy()
+
+    # Ukuran berkas SIFATNYA satu angka per partisi, bukan per baris — jadi
+    # disiarkan (broadcast) ke semua baris supaya dimensi 11 tetap bisa
+    # dinyatakan sebagai expectation GX biasa (ExpectColumnValuesToBeBetween),
+    # dan ikut ke Data Docs seperti dimensi lain. Lihat check_cost_storage().
+    if partisi is not None and partisi.ukuran_bytes is not None and len(df):
+        df["_ukuran_berkas_bytes"] = partisi.ukuran_bytes
 
     for kol in spec.kolom_profil:
         if kol.nama in df.columns:
@@ -779,12 +802,172 @@ def check_rekonsiliasi(r: Runner, spec, partisi, df_raw, aktif: bool):
 
 
 # ---------------------------------------------------------------------------
+# 10. FORMAT & PATTERN COMPLIANCE
+# ---------------------------------------------------------------------------
+
+def check_format_compliance(r: Runner, spec):
+    """
+    Beda dengan dimensi 8 (Data Cleanliness & Encoding), walau sama-sama
+    berbasis regex:
+      - Dimensi 8 ('pola:', atau diturunkan otomatis kalau 'pola:' kosong)
+        menjawab "apakah BENTUKNYA konsisten dengan yang pernah terlihat di
+        data historis" — soal kebersihan karakter & drift struktural.
+      - Dimensi 10 ('regex:') menjawab "apakah SESUAI STANDAR FORMAT bisnis
+        yang ditetapkan dari luar" — nomor telepon, tanggal ISO 8601, jumlah
+        digit KTP/kartu identitas, dsb. Nilai bisa saja bersih secara
+        karakter (lolos dimensi 8) tapi tetap gagal di sini kalau
+        strukturnya tidak sesuai standar (mis. nomor telepon tanpa kode
+        area, tanggal bukan 'YYYY-MM-DD', KTP kurang dari 16 digit).
+
+    'regex:' TIDAK diturunkan dari data maupun profiles/*.json — ini murni
+    assertion dari datasets.yml, sama sifatnya dengan 'rentang:' di dimensi
+    DISTRIBUTION: pasti, bukan hasil pembelajaran dari histori.
+    """
+    cat = "10. FORMAT & PATTERN COMPLIANCE"
+    kolom_format = spec.kolom_format
+
+    if not kolom_format:
+        r.skip(cat, "Kepatuhan format terhadap standar bisnis",
+               "Tidak ada kolom yang mendeklarasikan 'regex:' di datasets.yml, "
+               "sehingga tidak ada standar format eksternal yang bisa diperiksa.")
+        return
+
+    for k in kolom_format:
+        satuan = f" ({k.satuan})" if k.satuan else ""
+        if len(k.regex) == 1:
+            r.check(cat, f"{k.nama} mematuhi format standar{satuan}",
+                    gxe.ExpectColumnValuesToMatchRegex(column=k.nama, regex=k.regex[0]),
+                    catatan=f"Format wajib: {k.regex[0]}. Ditetapkan dari standar bisnis "
+                            f"eksternal, BUKAN diturunkan dari data historis — nilai yang "
+                            f"bersih secara karakter (lolos dimensi 8) tetap gagal di sini "
+                            f"kalau strukturnya menyimpang dari standar.")
+        else:
+            r.check(cat, f"{k.nama} mematuhi salah satu dari {len(k.regex)} format "
+                        f"standar yang diizinkan{satuan}",
+                    gxe.ExpectColumnValuesToMatchRegexList(
+                        column=k.nama, regex_list=k.regex, match_on="any"),
+                    catatan=f"Format wajib (salah satu): {k.regex}. Ditetapkan dari "
+                            f"standar bisnis eksternal, BUKAN diturunkan dari data historis.")
+
+
+# ---------------------------------------------------------------------------
+# 11. COST & STORAGE SAFETY
+# ---------------------------------------------------------------------------
+
+def _fmt_bytes(n: float) -> str:
+    for unit, div in (("GB", 1e9), ("MB", 1e6), ("KB", 1e3)):
+        if n >= div:
+            return f"{n / div:.2f} {unit}"
+    return f"{n:g} B"
+
+
+def check_cost_storage(r: Runner, spec, partisi):
+    """
+    Properti BERKAS (bytes), bukan properti isi data — karena itu tidak
+    memakai kolom asli dataset, melainkan kolom semu '_ukuran_berkas_bytes'
+    yang disiarkan oleh siapkan(). Menangkap dua arah:
+      - terlalu kecil : ekstraksi upstream gagal diam-diam, berkas nyaris
+        kosong tetap "sukses" mendarat.
+      - terlalu besar : berkas membengkak tak wajar (mis. infinite loop
+        saat ekstraksi, atau duplikasi masif).
+    Motivasi bisnisnya biaya: S3 mengenakan biaya per request (PUT/GET), dan
+    berkas jauh lebih kecil dari wajar berulang di banyak partisi adalah
+    gejala "small file problem" yang membengkakkan biaya query Athena/Spark.
+
+    CATATAN CAKUPAN: ini mengecek partisi yang SEDANG divalidasi, satu
+    berkas pada satu waktu. Ini TIDAK mengaudit jumlah berkas di seluruh
+    prefix S3 (masalah "jutaan berkas kecil" yang sesungguhnya) — itu
+    butuh me-list seluruh objek di prefix, operasi yang beda kelas dari
+    "validasi satu partisi" yang jadi model dimensi 1-10, dan ironisnya
+    ikut memakan request S3 dalam jumlah besar untuk mengeceknya. Berkas
+    0 byte yang gagal diparse total ditangani terpisah di validate.py
+    SEBELUM baca_parquet() dipanggil — lihat komentar di sana.
+    """
+    cat = "11. COST & STORAGE SAFETY"
+    if spec.ukuran_berkas_rentang is None:
+        r.skip(cat, "Keamanan ukuran berkas & biaya S3",
+               "Dataset ini belum mendeklarasikan 'ukuran_berkas.rentang' di "
+               "datasets.yml, sehingga tidak ada ambang ukuran untuk diperiksa.")
+        return
+    if partisi.ukuran_bytes is None:
+        r.skip(cat, "Keamanan ukuran berkas & biaya S3",
+               "Ukuran berkas partisi ini tidak berhasil ditentukan.")
+        return
+
+    lo, hi = spec.ukuran_berkas_rentang
+    r.check(cat,
+            f"Ukuran berkas dalam rentang wajar [{_fmt_bytes(lo)} .. {_fmt_bytes(hi)}]",
+            gxe.ExpectColumnValuesToBeBetween(
+                column="_ukuran_berkas_bytes", min_value=lo, max_value=hi),
+            catatan=f"Ukuran berkas aktual: {_fmt_bytes(partisi.ukuran_bytes)} "
+                    f"({partisi.ukuran_bytes:g} bytes). Batas bawah menangkap berkas "
+                    f"kosong/nyaris kosong (ekstraksi gagal diam-diam tapi berkas tetap "
+                    f"'sukses' mendarat); batas atas menangkap berkas yang membengkak "
+                    f"tak wajar (mis. infinite loop saat ekstraksi). S3 mengenakan biaya "
+                    f"per request (PUT/GET) — berkas jauh lebih kecil dari wajar yang "
+                    f"berulang di banyak partisi adalah gejala 'small file problem' yang "
+                    f"membengkakkan biaya query Athena/Spark.")
+
+
+# ---------------------------------------------------------------------------
+# 12. LINEAGE & AUDITABILITY
+# ---------------------------------------------------------------------------
+
+def check_lineage(r: Runner, spec, df_raw):
+    """
+    Kontrak GOVERNANCE (meta_audit.wajib), bukan kontrak schema biasa —
+    beda dengan dimensi 1 (Schema): dimensi 1 cuma menjamin file COCOK
+    dengan 'kolom:' yang dideklarasikan di datasets.yml; kalau penulis
+    datasets.yml lupa mencantumkan kolom audit trail (mis.
+    bronze_inserted_at) di 'kolom:' SAMA SEKALI, dimensi 1 tidak pernah
+    tahu kolom itu seharusnya ada — file tetap "cocok" dengan kontraknya
+    sendiri yang sudah cacat. Dimensi 12 menegakkan STANDAR ORGANISASI
+    (Medallion Architecture: Bronze wajib bisa ditelusuri ke pencetusnya)
+    secara independen, diperiksa terhadap skema FILE yang sebenarnya —
+    bukan terhadap 'kolom:' — supaya tetap tegak walau kontraknya sendiri
+    cacat.
+
+    Kolom yang terdaftar di 'meta_audit.wajib' juga wajib TIDAK PERNAH null,
+    terlepas dari pengaturan 'wajib:' kolom itu sendiri di 'kolom:' — audit
+    trail yang bolong sebagian sama rusaknya dengan audit trail yang hilang
+    total.
+    """
+    cat = "12. LINEAGE & AUDITABILITY"
+    wajib = spec.meta_audit_wajib
+
+    if not wajib:
+        r.skip(cat, "Ketertelusuran data (audit trail / lineage)",
+               "Dataset ini (maupun blok 'default:') belum mendeklarasikan "
+               "'meta_audit.wajib' di datasets.yml, sehingga tidak ada kontrak "
+               "kolom audit yang bisa diperiksa.")
+        return
+
+    r.check(cat, f"Kolom audit wajib ada di berkas: {', '.join(wajib)}",
+            gxe.ExpectTableColumnsToMatchSet(column_set=wajib, exact_match=False), raw=True,
+            catatan="Medallion Architecture: data di Bronze wajib bisa ditelusuri "
+                    "kembali ke pencetusnya tanpa tebak-tebakan. Diperiksa terhadap "
+                    "skema BERKAS langsung, bukan sekadar daftar 'kolom:' di "
+                    "datasets.yml — kontrak audit ini tetap ditegakkan walau "
+                    "'kolom:' sendiri lupa mendaftarkannya.")
+
+    for i, nama in enumerate(wajib):
+        if nama not in df_raw.columns:
+            continue  # sudah tertangkap check di atas, jangan digandakan
+        r.check(cat, f"{nama} selalu terisi (audit trail tidak boleh bolong)",
+                gxe.ExpectColumnValuesToNotBeNull(column=nama), raw=True,
+                catatan="Kolom audit yang null berarti satu baris kehilangan jejak "
+                        "asal-usulnya — siklus hidup data (data lifecycle) rusak "
+                        "walau isi baris itu sendiri lolos semua dimensi lain."
+                if i == 0 else None)
+
+
+# ---------------------------------------------------------------------------
 # Orkestrasi
 # ---------------------------------------------------------------------------
 
 def jalankan_semua(spec, prof, df_raw, partisi, mode: str, now: datetime,
                    reconcile: bool = True):
-    df = siapkan(spec, df_raw)
+    df = siapkan(spec, df_raw, partisi)
     _, batch_raw, batch_work = buat_batch(df_raw, df)
     r = Runner(batch_raw, batch_work)
 
@@ -797,6 +980,9 @@ def jalankan_semua(spec, prof, df_raw, partisi, mode: str, now: datetime,
     check_distribution(r, spec, prof)
     check_cleanliness(r, spec, prof)
     check_rekonsiliasi(r, spec, partisi, df_raw, reconcile)
+    check_format_compliance(r, spec)
+    check_cost_storage(r, spec, partisi)
+    check_lineage(r, spec, df_raw)
     return r.results, df
 
 
