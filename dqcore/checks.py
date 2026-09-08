@@ -41,6 +41,19 @@ import pandas as pd
 import great_expectations as gx
 import great_expectations.expectations as gxe
 
+# Kolom waktu yang tersimpan sebagai epoch integer (bukan string/datetime)
+# butuh 'unit' eksplisit di pd.to_datetime() -- tanpa ini, integer epoch
+# MILLISECONDS (mis. Date BIGINT ~1.7e12 dari SQL Server) salah tafsir sebagai
+# NANOSECONDS (default pandas utk input integer), mendarat di tahun 1970.
+# Token Indonesia divalidasi di spec.py (SATUAN_WAKTU_VALID); pemetaan ke kode
+# unit pandas ada di sini, sama alasannya dengan type_tokens() di atas.
+SATUAN_WAKTU_KE_UNIT = {
+    "detik": "s",
+    "milidetik": "ms",
+    "mikrodetik": "us",
+    "nanodetik": "ns",
+}
+
 CATEGORIES = [
     "1. SCHEMA", "2. VOLUME", "3. FRESHNESS", "4. MISSINGNESS",
     "5. UNIQUENESS", "6. INTEGRITY", "7. DISTRIBUTION",
@@ -171,7 +184,17 @@ def siapkan(spec, df_raw: pd.DataFrame, partisi=None) -> pd.DataFrame:
             df[f"_num_{kol.nama}"] = pd.to_numeric(df[kol.nama], errors="coerce")
 
     if spec.kolom_waktu and spec.kolom_waktu in df.columns:
-        waktu = pd.to_datetime(df[spec.kolom_waktu])
+        unit = SATUAN_WAKTU_KE_UNIT.get(spec.satuan_waktu)
+        waktu = pd.to_datetime(df[spec.kolom_waktu], unit=unit)
+        if unit:
+            # check_freshness() (dimensi 3) membandingkan kolom ini APA ADANYA
+            # (ExpectColumnValuesToBeBetween(column=spec.kolom_waktu, ...)) --
+            # kolom mentahnya masih epoch integer, jadi harus ditimpa di sini
+            # dengan hasil konversi, bukan cuma dipakai lokal untuk _lag_hari
+            # dkk. Aman: batch 'raw' (dimensi 1 SCHEMA) memakai df_raw yang
+            # tidak disentuh siapkan(), jadi kontrak tipe 'integer' di YAML
+            # tetap diperiksa apa adanya.
+            df[spec.kolom_waktu] = waktu
         if spec.kolom_muat and spec.kolom_muat in df.columns:
             df["_lag_hari"] = (pd.to_datetime(df[spec.kolom_muat]) - waktu
                                ).dt.total_seconds() / 86400.0

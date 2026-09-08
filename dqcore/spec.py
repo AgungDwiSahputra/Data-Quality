@@ -28,6 +28,14 @@ PARTISI_VALID = {"harian", "mingguan", "snapshot", "tanpa_partisi"}
 # Granularitas pelaporan — dipakai check kapasitas fisik & keunikan per periode.
 GRANULARITAS_VALID = {"jam", "hari", "minggu", None}
 
+# Satuan epoch untuk 'kunci.waktu' yang tersimpan sebagai angka (integer),
+# bukan string datetime — mis. kolom 'Date' BIGINT epoch milliseconds dari
+# SQL Server. None (tidak diisi) = kolom waktu berupa string/datetime biasa,
+# diparse pd.to_datetime() tanpa unit seperti sebelumnya. Pemetaan ke kode
+# unit pandas ("s"/"ms"/"us"/"ns") ada di checks.py/profile.py, bukan di
+# sini — sama alasannya dengan TIPE_VALID di atas.
+SATUAN_WAKTU_VALID = {"detik", "milidetik", "mikrodetik", "nanodetik"}
+
 
 class SpecError(Exception):
     """Kesalahan pada datasets.yml — pesannya ditujukan ke penyunting YAML."""
@@ -93,6 +101,7 @@ class DatasetSpec:
     surrogate_key: str | None = None
     business_key: list[str] = field(default_factory=list)
     kolom_waktu: str | None = None          # waktu kejadian (recorded_at)
+    satuan_waktu: str | None = None         # epoch: detik|milidetik|mikrodetik|nanodetik
     kolom_muat: str | None = None           # waktu proses (loaded_at)
     granularitas: str | None = None         # jam | hari | minggu
 
@@ -285,6 +294,16 @@ def _dataset_dari_yaml(nama: str, data: dict, default: dict) -> DatasetSpec:
     cek_ada(kunci.get("surrogate"), "kunci.surrogate")
     cek_ada(kunci.get("waktu"), "kunci.waktu")
     cek_ada(kunci.get("waktu_muat"), "kunci.waktu_muat")
+
+    satuan_waktu = kunci.get("satuan_waktu")
+    if satuan_waktu is not None and satuan_waktu not in SATUAN_WAKTU_VALID:
+        raise SpecError(
+            f"[{konteks}.kunci.satuan_waktu] {satuan_waktu!r} tidak dikenal. "
+            f"Pilih: {sorted(SATUAN_WAKTU_VALID)}")
+    if satuan_waktu and not kunci.get("waktu"):
+        raise SpecError(
+            f"[{konteks}.kunci.satuan_waktu] diisi tapi 'kunci.waktu' kosong — "
+            f"tidak ada kolom waktu epoch yang perlu dikonversi.")
     for k in (kunci.get("bisnis") or []):
         cek_ada(k, "kunci.bisnis")
 
@@ -347,6 +366,7 @@ def _dataset_dari_yaml(nama: str, data: dict, default: dict) -> DatasetSpec:
         surrogate_key=kunci.get("surrogate"),
         business_key=list(kunci.get("bisnis") or []),
         kolom_waktu=kunci.get("waktu"),
+        satuan_waktu=satuan_waktu,
         kolom_muat=kunci.get("waktu_muat"),
         granularitas=gran,
         kolom=kolom,

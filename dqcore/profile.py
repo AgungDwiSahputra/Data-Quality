@@ -29,6 +29,16 @@ import pandas as pd
 
 from .sources import baca_parquet
 
+# Sama seperti SATUAN_WAKTU_KE_UNIT di checks.py -- kolom waktu epoch integer
+# (mis. Date BIGINT epoch milliseconds) butuh 'unit' eksplisit di
+# pd.to_datetime(), kalau tidak integer-nya salah tafsir sebagai nanoseconds.
+SATUAN_WAKTU_KE_UNIT = {
+    "detik": "s",
+    "milidetik": "ms",
+    "mikrodetik": "us",
+    "nanodetik": "ns",
+}
+
 # Batas jumlah pola per kolom. Lewat angka ini, pola per-struktur dianggap
 # terlalu pecah dan diganti satu pola umum berbasis kelas karakter.
 MAKS_POLA = 12
@@ -228,7 +238,8 @@ def bangun_profil(spec, partisi, kecuali: set[str] | None = None) -> dict:
         if kunci_entitas and kunci_entitas in df.columns:
             entitas.append(int(df[kunci_entitas].nunique()))
         if spec.kolom_waktu and spec.kolom_waktu in df.columns:
-            waktu = pd.to_datetime(df[spec.kolom_waktu])
+            unit = SATUAN_WAKTU_KE_UNIT.get(spec.satuan_waktu)
+            waktu = pd.to_datetime(df[spec.kolom_waktu], unit=unit)
             if spec.granularitas == "jam":
                 periode.append(int(waktu.dt.hour.nunique()))
             elif spec.granularitas == "hari":
