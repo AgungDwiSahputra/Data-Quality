@@ -196,8 +196,21 @@ def siapkan(spec, df_raw: pd.DataFrame, partisi=None) -> pd.DataFrame:
             # tetap diperiksa apa adanya.
             df[spec.kolom_waktu] = waktu
         if spec.kolom_muat and spec.kolom_muat in df.columns:
-            df["_lag_hari"] = (pd.to_datetime(df[spec.kolom_muat]) - waktu
-                               ).dt.total_seconds() / 86400.0
+            waktu_muat = pd.to_datetime(df[spec.kolom_muat])
+            # '_ingested_at' dibubuhkan exporter.py berzona UTC (tz-aware),
+            # sedangkan kolom_waktu dari SQL Server (atau epoch yang baru
+            # dikonversi di atas) biasanya tz-naive -- pengurangan langsung
+            # antar keduanya crash TypeError ("tz-naive vs tz-aware"). Sama
+            # persis dengan yang sudah ditemukan scaffold.py (lihat komentar
+            # di sana); di sini tidak bisa cuma di-skip try/except karena
+            # _lag_hari WAJIB ada untuk dimensi 3. Buang tzinfo dari sisi
+            # mana pun yang tz-aware -- aman krn tz_localize(None) pada
+            # series tz-aware mengonversi ke instant UTC dulu baru membuang
+            # tz-nya, bukan cuma mencopot tz apa adanya.
+            if waktu_muat.dt.tz is not None:
+                waktu_muat = waktu_muat.dt.tz_localize(None)
+            waktu_naive = waktu.dt.tz_localize(None) if waktu.dt.tz is not None else waktu
+            df["_lag_hari"] = (waktu_muat - waktu_naive).dt.total_seconds() / 86400.0
         if spec.granularitas == "jam":
             df["_periode"] = waktu.dt.hour
             df["_offgrid_detik"] = (waktu.dt.minute * 60 + waktu.dt.second
@@ -441,6 +454,18 @@ def check_missingness(r: Runner, spec, prof):
 # 5. UNIQUENESS
 # ---------------------------------------------------------------------------
 
+def _unik_expectation(kolom: list[str]):
+    """
+    GX's ExpectCompoundColumnsToBeUnique mewajibkan minimal 2 kolom (error
+    pydantic kalau 1) -- kunci.bisnis/kunci.surrogate+bisnis gabungan bisa saja
+    cuma 1 kolom (mis. transaction_id tunggal), jadi harus jatuh ke
+    ExpectColumnValuesToBeUnique biasa utk kasus itu.
+    """
+    if len(kolom) == 1:
+        return gxe.ExpectColumnValuesToBeUnique(column=kolom[0])
+    return gxe.ExpectCompoundColumnsToBeUnique(column_list=kolom)
+
+
 def check_uniqueness(r: Runner, spec, df):
     cat = "5. UNIQUENESS"
 
@@ -457,7 +482,7 @@ def check_uniqueness(r: Runner, spec, df):
 
     if spec.business_key:
         r.check(cat, f"Kunci bisnis ({' + '.join(spec.business_key)}) unik",
-                gxe.ExpectCompoundColumnsToBeUnique(column_list=spec.business_key),
+                _unik_expectation(spec.business_key),
                 catatan="Ini duplikat yang sesungguhnya berbahaya. Surrogate key selalu "
                         "unik karena di-generate baru; entitas yang melapor dua kali "
                         "untuk periode sama akan menggandakan nilai saat agregasi.")
@@ -466,7 +491,7 @@ def check_uniqueness(r: Runner, spec, df):
             kunci = [k for k in spec.business_key if k != spec.kolom_waktu] + ["_periode_floor"]
             r.check(cat,
                     f"Satu {kunci[0]} hanya punya SATU pembacaan per {spec.granularitas}",
-                    gxe.ExpectCompoundColumnsToBeUnique(column_list=kunci),
+                    _unik_expectation(kunci),
                     severity="warning",
                     catatan=f"Lebih ketat daripada kunci bisnis di atas. Dua baris dengan "
                             f"timestamp berbeda tipis lolos pemeriksaan timestamp mentah "

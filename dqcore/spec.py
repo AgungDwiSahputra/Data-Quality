@@ -309,9 +309,16 @@ def _dataset_dari_yaml(nama: str, data: dict, default: dict) -> DatasetSpec:
 
     sql_server = sumber.get("sql_server") or {}
     sql_tabel = sql_server.get("tabel")
+    # 'kolom_waktu' di sini SENGAJA TIDAK divalidasi terhadap daftar 'kolom:' --
+    # beda namespace dari kunci.waktu/kunci.surrogate/dst di atas. Yang terakhir
+    # itu nama kolom di DATAFRAME lokal (parquet); 'sumber.sql_server.kolom_waktu'
+    # murni string mentah yang diinterpolasi langsung ke query SQL Server live
+    # (lihat dqcore/sqlserver.py:hitung_baris()) -- TIDAK PERNAH dicocokkan ke
+    # dataframe. Ditemukan (2026-09-08) skema SQL Server bisa PascalCase
+    # (RecordTime) sementara parquet hasil ekspornya snake_case (record_time)
+    # utk dataset yang sama (silver_ars_transactions) -- kalau tetap divalidasi
+    # ke 'kolom:', kasus rename-during-export yang sah ini jadi mustahil ditulis.
     sql_kolom_waktu = sql_server.get("kolom_waktu")
-    if sql_kolom_waktu:
-        cek_ada(sql_kolom_waktu, "sumber.sql_server.kolom_waktu")
     if sql_kolom_waktu and not sql_tabel:
         raise SpecError(
             f"[{konteks}.sumber.sql_server] 'kolom_waktu' diisi tapi 'tabel' "

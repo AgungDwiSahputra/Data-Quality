@@ -1,0 +1,282 @@
+# ===========================================================================
+# silver_data_validation.yml -- daftar dataset SILVER (cleaned & conformed)
+# yang divalidasi lewat --config file ini, terpisah dari datasets.yml (gold)
+# dan bronze_data_validation.yml/bronze_datasets.yml (bronze). Sama pola
+# --config-nya untuk ketiga skrip inti:
+#   python scaffold.py        --config silver_data_validation.yml --nama <ds> --s3 "..." --tempel
+#   python build_reference.py --config silver_data_validation.yml --dataset <ds> --source s3
+#   python validate.py        --config silver_data_validation.yml --dataset <ds> --source s3
+#   python validate.py        --config silver_data_validation.yml --list
+#
+# ===========================================================================
+# RIWAYAT PERBAIKAN (2026-09-08)
+# ===========================================================================
+#
+# Revisi sebelumnya file ini adalah HASIL COPY-PASTE MENTAH dari
+# bronze_data_validation.yml (header masih menyebut "BRONZE", tabel/nama
+# dataset contoh masih punya nama-nama Bronze, dan referensi PDF masih ke
+# bagian "LAYER BRONZE") -- sudah ditulis ulang di bawah supaya benar-benar
+# mendeskripsikan Silver. Satu BUG KONKRET yang ikut ke-copy dan sudah
+# diperbaiki: 'default.meta_audit.wajib' mewarisi '[_ingested_at]' dari
+# bronze, padahal kolom audit di Silver namanya 'loaded_at' -- '_ingested_at'
+# TIDAK PERNAH ADA di skema Silver manapun di file ini. Akibatnya Dimensi 12
+# (LINEAGE AUDIT) akan GAGAL TERUS setiap run (mencari kolom yang memang
+# tidak ada), bukan karena data rusak. Sudah diganti ke 'loaded_at' di blok
+# default: di bawah.
+#
+# ===========================================================================
+# DIMENSI YANG DIAKTIFKAN -- disesuaikan dengan docs/Panduan_Proses_Data_
+# Validation.pdf bagian "2. LOGIKA DATA QUALITY: LAYER SILVER" (2026-09-08)
+# ===========================================================================
+#
+# PDF mengaktifkan 6 dimensi utk Silver (validasi tingkat BARIS/micro, fokus
+# "keutuhan data, validitas konten, kebersihan string, & kepatuhan aturan
+# bisnis" -- beda dari Bronze yang fokus "tabel & berkas"):
+#   1. Schema                 -- kolom kritis wajib pertahankan tipenya
+#   4. Missingness             -- customer_id/order_id tidak boleh null/kosong
+#   5. Uniqueness              -- kunci.bisnis tidak boleh duplikat
+#   6. Integrity (business)    -- relasi antar kolom, mis. ship_date>=order_date
+#   8. Cleanliness & Encoding  -- mojibake/karakter kontrol pada kolom string
+#   10. Pattern Compliance     -- regex standar bisnis (email, no. telepon, dst)
+#
+# Dimensi 1/4/8 OTOMATIS aktif (bawaan mesin, tidak perlu di-set) -- lihat
+# tabel anotasi per dataset di bawah untuk 5/6/10 yang butuh field eksplisit.
+#
+# ===========================================================================
+# REVISI 2026-09-08 (kedua): DIPERSEMPIT KE PERSIS 6 DIMENSI PDF
+# ===========================================================================
+#
+# Revisi SEBELUMNYA (di atas) sempat mempertahankan Dimensi 3/9/11/12
+# (Freshness, Rekonsiliasi Sumber, Storage Safety, Lineage Audit) sebagai
+# ekstensi sadar di luar permintaan PDF -- SEKARANG DICABUT atas permintaan
+# user: Data Docs (gx/uncommitted/data_docs/) harus persis menampilkan 6
+# dimensi yang diminta PDF, tidak lebih. Field YAML yang mengaktifkannya
+# sudah DIHAPUS dari kedua dataset:
+#   - kunci.waktu / kunci.waktu_muat        (mematikan Dimensi 3 FRESHNESS)
+#   - sumber.sql_server                     (mematikan Dimensi 9 REKONSILIASI)
+#   - ukuran_berkas.rentang                 (mematikan Dimensi 11 STORAGE SAFETY)
+#   - meta_audit.wajib diset [] global      (mematikan Dimensi 12 LINEAGE AUDIT)
+#
+# PENGECUALIAN YANG TIDAK BISA DIMATIKAN: DIMENSI 2 (VOLUME). Ini BUKAN
+# pilihan per-layer di YAML sama sekali -- check_volume() di dqcore/checks.py
+# tidak punya syarat/flag apa pun, selalu jalan begitu profiles/*.json (hasil
+# build_reference.py) ada. Mematikannya perlu mengubah kode engine (di luar
+# lingkup permintaan ini), BUKAN sekadar menghapus sesuatu di file ini --
+# jadi Data Docs akan TETAP menampilkan Dimensi 2 walau PDF tidak
+# memintanya utk Silver. Sama halnya Dimensi 7 (DISTRIBUTION) TIDAK muncul
+# bukan karena dimatikan sengaja, tapi karena memang butuh
+# 'profil_distribusi: true' yang belum ada di kolom manapun di file ini.
+#
+# TEMUAN BERHARGA dari investigasi sebelum pencabutan ini -- disimpan di sini
+# supaya tidak hilang kalau Dimensi 3/9/11/12 mau diaktifkan lagi nanti:
+#   - silver_ars_transactions: kolom SQL Server PascalCase (RecordTime,
+#     ETL_InsertedAt), kolom PARQUET snake_case (record_time). Kolom audit
+#     BERGANTI NAMA DUA KALI di riwayatnya sendiri (dikonfirmasi user +
+#     verifikasi S3 langsung, 2026-09-09): 2025-01-01 (hari pertama pipeline)
+#     'loaded_at' -> 2025-01-08 s.d. 2026-09-07 (mayoritas riwayat, ~20 bulan)
+#     'etl_inserted_at' -> 2026-09-08 dst (skema Glue TERKINI) 'loaded_at'
+#     lagi. Kontrak 'kolom:'/'urutan_waktu' di blok dataset mengikuti skema
+#     TERKINI ('loaded_at'); partisi historis di era 'etl_inserted_at' akan
+#     gagal Dimensi 1/6 kalau divalidasi -- itu schema evolution asli, wajar.
+#   - dqcore/spec.py TIDAK memvalidasi 'sumber.sql_server.kolom_waktu'
+#     terhadap 'kolom:' lokal (sengaja, lihat komentar di spec.py) --
+#     namespace SQL Server independen dari nama kolom parquet.
+#   - SQL Server dbo.Silver_ARS_Transactions punya kolom 'SilverID' yang
+#     TIDAK PERNAH ikut terekspor ke parquet -- kalau Dimensi 9 diaktifkan
+#     lagi, ini akan selalu gagal sampai diklarifikasi ke pemilik pipeline
+#     apakah itu memang disengaja.
+#   - Partisi S3 dataset ini SELALU terdiri >1 file fisik per hari (writer
+#     terdistribusi) -- dqcore/sources.py sudah diperbaiki 2026-09-08 utk
+#     menggabungkan semuanya per tanggal, jadi ini TIDAK relevan lagi kalau
+#     Dimensi 9/11 diaktifkan ulang, tapi dicatat sebagai konteks historis.
+#
+# ===========================================================================
+# KONVENSI ANOTASI DI FILE INI -- supaya gampang maintain
+# ===========================================================================
+#
+# Tiap key YAML yang MENGAKTIFKAN sebuah dimensi diberi komentar
+# "# => DIMENSI N ..." tepat di baris yang sama/tepat di atasnya, di SETIAP
+# blok dataset (bukan cuma dijelaskan sekali di header) -- supaya siapa pun
+# yang buka satu blok dataset saja (tanpa scroll ke atas) langsung tahu
+# dimensi mana yang jalan dari situ. Kalau menambah dataset baru, ikuti pola
+# anotasi yang sama:
+#
+#   kunci:
+#     waktu: <kolom>        # => DIMENSI 3 FRESHNESS
+#     waktu_muat: <kolom>   # dipasangkan dgn 'waktu' utk hitung _lag_hari (DIMENSI 3)
+#     bisnis: [<kolom>]     # => DIMENSI 5 UNIQUENESS
+#
+#   urutan_waktu:            # => DIMENSI 6 INTEGRITY (business logic consistency)
+#     - [<kolom_lebih_baru>, <kolom_lebih_lama>]   # A >= B
+#
+#   sumber.sql_server.tabel  # => DIMENSI 9 REKONSILIASI SUMBER
+#   ukuran_berkas.rentang    # => DIMENSI 11 COST & STORAGE SAFETY
+#   kolom: [...].regex       # => DIMENSI 10 FORMAT & PATTERN COMPLIANCE (per kolom)
+#
+# Dimensi 1 (Schema), 4 (Missingness via 'wajib:' per kolom), dan
+# 8 (Cleanliness/Encoding, otomatis utk semua kolom tipe: string) TIDAK diberi
+# anotasi khusus di tiap baris kolom karena selalu aktif otomatis begitu
+# 'kolom:' terisi -- menandainya di setiap baris cuma menambah noise.
+#
+# ${VAR} diganti otomatis dengan environment variable (dari .env), sama
+# seperti datasets.yml/bronze_datasets.yml/bronze_data_validation.yml.
+#
+# CATATAN: file ini berisi nama tabel SQL Server, path S3, dan nama+tipe
+# kolom asli organisasi -- SUDAH digitignore-kan, JANGAN di-git add manual.
+# ===========================================================================
+
+default:
+  ambang:
+    toleransi_volume: 0.15   # dipakai DIMENSI 2 VOLUME (otomatis begitu ada baseline; bukan pilihan sadar per layer)
+    margin_null: 0.05        # dipakai DIMENSI 4 MISSINGNESS utk kolom wajib:false (proporsi terisi minimum)
+  sla_lag_hari:              # TIDAK TERPAKAI saat ini -- dipakai DIMENSI 3 FRESHNESS, yang DIMATIKAN
+                             # 2026-09-08 (lihat header). Dibiarkan di sini (bukan dihapus) supaya
+                             # angkanya tidak perlu diturunkan ulang kalau dimensi ini diaktifkan lagi.
+    harian: 2.0
+    backfill: 260.0
+  meta_audit:
+    wajib: []   # => DIMENSI 12 LINEAGE AUDIT DIMATIKAN 2026-09-08 (lihat header) -- PDF tidak
+                # memintanya utk Silver. Sebelumnya sempat [_ingested_at] (bug warisan bronze,
+                # kolom itu tidak pernah ada di Silver), lalu [loaded_at] (ekstensi sadar), kini
+                # dikosongkan total sesuai permintaan mempersempit ke 6 dimensi PDF persis.
+
+datasets:
+
+  # =========================================================================
+  # SILVER ARS TRANSACTIONS -- hasil sp_ETL_LoadSilver_ARS_Transactions,
+  # raw copy dbo.Silver_ARS_Transactions TANPA join/filter tambahan. Window
+  # custom 07:00->07:00 hari berikutnya (SAMA dgn idempotency delete
+  # sp_ETL_LoadSilver_ARS_Transactions Step 1), BUKAN kalender 00:00-24:00.
+  # =========================================================================
+
+  silver_ars_transactions:
+    deskripsi: "Silver ARS Transactions -- raw copy dbo.Silver_ARS_Transactions, TANPA join/filter. Window custom 07:00->07:00 hari berikutnya (SAMA dgn idempotency delete sp_ETL_LoadSilver_ARS_Transactions Step 1), BUKAN kalender 00:00-24:00 biasa."
+
+    sumber:
+      s3: "s3://${S3_BUCKET_NAME}/datalake/silver/ars/ars_transactions/" #s3://kpn-gis-s3-bucket/datalake/silver/ars/ars_transactions/
+      partisi: harian
+      # 'sql_server:' (=> DIMENSI 9 REKONSILIASI SUMBER) DIHAPUS 2026-09-08 sesuai permintaan
+      # mempersempit ke 6 dimensi PDF persis -- lihat catatan lengkap (termasuk nama kolom SQL
+      # Server yang benar, RecordTime/ETL_InsertedAt PascalCase) di header REVISI 2026-09-08 (kedua).
+
+    # Dimensi 11 STORAGE SAFETY DIMATIKAN 2026-09-08 ('ukuran_berkas.rentang' dihapus) -- lihat header.
+
+    kunci:
+      # 'waktu'/'waktu_muat' (=> DIMENSI 3 FRESHNESS) DIHAPUS 2026-09-08 -- lihat header.
+      bisnis: [transaction_id]    # => DIMENSI 5 UNIQUENESS -- transaction_id kandidat paling jelas
+                                   # sbg identitas unik per transaksi.
+
+    # => DIMENSI 6 INTEGRITY (business logic consistency).
+    # Aturan: data tidak mungkin di-load (loaded_at) sebelum ia direkam (record_time) --
+    # analog persis dgn contoh PDF "ship_date >= order_date". PENTING -- kolom audit dataset
+    # ini SUDAH GANTI NAMA DUA KALI (dikonfirmasi user + verifikasi S3 langsung, 2026-09-09):
+    #   2025-01-01 (hari pertama pipeline)      : loaded_at
+    #   2025-01-08 s.d. 2026-09-07 (mayoritas)   : etl_inserted_at
+    #   2026-09-08 dst (skema Glue TERKINI)      : loaded_at (lagi)
+    # YAML ini mengikuti skema TERKINI ('loaded_at') krn itu yang dipakai partisi yang akan terus
+    # bertambah ke depan. Konsekuensinya: SEMUA partisi historis di era 'etl_inserted_at'
+    # (2025-01-08 s.d. 2026-09-07 -- porsi TERBESAR riwayat) akan gagal Dimensi 1/6 kalau
+    # divalidasi -- itu memang skema evolution asli yang harus tertangkap, bukan bug validator.
+    urutan_waktu:
+      - [loaded_at, record_time]
+
+    # Dimensi 10 FORMAT & PATTERN COMPLIANCE: PDF minta regex standar bisnis (email, no. telepon,
+    # dst) utk Silver, TAPI skema dataset ini (telemetri sensor plantation) tidak punya kolom
+    # semacam itu -- tidak ada 'regex:' ditambahkan krn tidak ada standar format eksternal yang
+    # applicable saat ini (bukan lupa/oversight). Kalau nanti ada kolom berformat tetap (mis. kode
+    # device dgn pola digit tertentu), tambahkan 'regex:' di kolom itu.
+
+    # Kolom NYATA hasil scaffold.py thd data S3 sungguhan (2026-09-01, 974 partisi tersedia, 3 disampel). 'wajib' dihitung dari 3
+    # partisi yang disampel -- BUKAN jaminan penuh riwayat historis.
+    # (Dimensi 1 SCHEMA, 4 MISSINGNESS via 'wajib:', dan 8 CLEANLINESS/ENCODING otomatis aktif dari daftar ini, lihat header.)
+    kolom:
+    - {nama: source, tipe: string}   # sumber data
+    - {nama: transaction_id, tipe: string}   # ID transaksi
+    - {nama: sensor_id, tipe: string}   # ID sensor
+    - {nama: sensor_name, tipe: string}   # nama sensor
+    - {nama: device_id, tipe: string}   # ID device
+    - {nama: device_name, tipe: string}   # nama device
+    - {nama: value, tipe: float}   # nilai pembacaan
+    - {nama: record_time, tipe: datetime}   # waktu record
+    - {nama: is_manual, tipe: integer, wajib: false}   # 0/1, null 100%
+    - {nama: sensor_category, tipe: string}   # kategori sensor
+    - {nama: jenis_device, tipe: string}   # jenis device
+    - {nama: sensor_unit, tipe: string}   # unit sensor
+    - {nama: brand, tipe: string}   # merk
+    - {nama: connectivity, tipe: string}   # konektivitas
+    - {nama: plantation, tipe: string}   # plantation
+    - {nama: grouping, tipe: string}   # grouping
+    - {nama: company_code, tipe: string}   # kode company
+    - {nama: est_code, tipe: string}   # kode estate
+    - {nama: est_new_code, tipe: string}   # kode estate baru
+    - {nama: est_code_sap, tipe: string}   # kode estate SAP
+    - {nama: block_gis, tipe: string}   # block GIS
+    - {nama: block_sap, tipe: string}   # block SAP
+    - {nama: loaded_at, tipe: datetime}   # waktu load. Nama TERKINI (sejak partisi 2026-09-08) --
+      # sebelumnya sempat 'etl_inserted_at' selama ~20 bulan (2025-01-08 s.d. 2026-09-07), lihat
+      # catatan skema evolution lengkap di 'urutan_waktu' & header di atas.
+
+  # =========================================================================
+  # SILVER AWL TRANSACTIONS -- hasil sp_ETL_LoadSilver_AWL_Transactions,
+  # raw copy dbo.Silver_AWL_Transactions TANPA join/filter tambahan. Kalender
+  # 00:00-24:00 BIASA -- TIDAK termasuk kelompok window custom 07:00->07:00
+  # (window itu cuma berlaku utk data ARS & RS, DIKONFIRMASI user 2026-09-08).
+  # =========================================================================
+
+  silver_awl_transactions:
+    deskripsi: "Silver AWL Transactions -- raw copy dbo.Silver_AWL_Transactions, TANPA join/filter. Partisi kalender 00:00-24:00 biasa."
+
+    sumber:
+      s3: "s3://${S3_BUCKET_NAME}/datalake/silver/awl/awl_transactions/" #s3://kpn-gis-s3-bucket/datalake/silver/awl/awl_transactions/
+      partisi: harian
+      # 'sql_server:' (=> DIMENSI 9 REKONSILIASI SUMBER) DIHAPUS 2026-09-08 -- lihat header.
+
+    # Dimensi 11 STORAGE SAFETY DIMATIKAN 2026-09-08 ('ukuran_berkas.rentang' dihapus) -- lihat header.
+
+    kunci:
+      # 'waktu'/'waktu_muat' (=> DIMENSI 3 FRESHNESS) DIHAPUS 2026-09-08 -- lihat header.
+      bisnis: [TransactionID]     # => DIMENSI 5 UNIQUENESS
+
+    # => DIMENSI 6 INTEGRITY (business logic consistency). Aturan: loaded_at >= RecordTime.
+    urutan_waktu:
+      - [loaded_at, RecordTime]
+
+    # Dimensi 10 FORMAT & PATTERN COMPLIANCE: sama seperti silver_ars_transactions -- tidak ada
+    # standar format bisnis eksternal yang applicable pada skema ini saat ini, jadi 'regex:'
+    # sengaja belum ditambahkan (bukan oversight).
+
+    # Kolom NYATA hasil scaffold.py thd data S3 sungguhan (2026-09-01, 974 partisi tersedia, 3 disampel). 'wajib' dihitung dari 3
+    # partisi yang disampel -- BUKAN jaminan penuh riwayat historis.
+    # (Dimensi 1 SCHEMA, 4 MISSINGNESS via 'wajib:', dan 8 CLEANLINESS/ENCODING otomatis aktif dari daftar ini, lihat header.)
+    kolom:
+      - {nama: Source, tipe: string}   # sumber data
+      - {nama: TransactionID, tipe: string}   # ID transaksi
+      - {nama: SensorID, tipe: string}   # ID sensor
+      - {nama: SensorName, tipe: string}   # nama sensor
+      - {nama: DeviceID, tipe: string}   # ID device
+      - {nama: DeviceName, tipe: string}   # nama device
+      - {nama: Value, tipe: float}   # nilai pembacaan
+      - {nama: RecordTime, tipe: datetime}   # waktu record
+      - {nama: IsManual, tipe: integer, wajib: false}   # 0/1, null 100%
+      - {nama: Latitude, tipe: string}   # latitude
+      - {nama: Longitude, tipe: string}   # longitude
+      - {nama: SensorCategory, tipe: string}   # kategori sensor
+      - {nama: JenisDevice, tipe: string}   # jenis device
+      - {nama: SensorUnit, tipe: string}   # unit sensor
+      - {nama: Brand, tipe: string}   # merk
+      - {nama: Connectivity, tipe: string}   # konektivitas
+      - {nama: Plantation, tipe: string}   # plantation
+      - {nama: Grouping, tipe: string}   # grouping
+      - {nama: CompanyCode, tipe: string}   # kode company
+      - {nama: EstCode, tipe: string}   # kode estate
+      - {nama: EstNewCode, tipe: string}   # kode estate baru
+      - {nama: EstCodeSAP, tipe: string}   # kode estate SAP
+      - {nama: BlockGIS, tipe: string}   # block GIS
+      - {nama: BlockSAP, tipe: string}   # block SAP
+      - {nama: loaded_at, tipe: datetime}   # waktu load
+      - {nama: ETL_InsertedAt, tipe: datetime, wajib: false}   # DITAMBAHKAN 2026-09-08: kolom nyata
+        # ditemukan di file S3 sungguhan lewat validate.py (Dimensi 1 SCHEMA gagal "jumlah kolom
+        # tepat 25, observasi 26" sebelum ini ditambahkan) -- TIDAK ada di scaffold 2026-09-01,
+        # kemungkinan kolom baru dari SQL Server yang belum sempat di-scaffold ulang. 'wajib: false'
+        # sementara krn belum ada histori null-rate utk kolom ini -- jalankan build_reference.py
+        # ulang lalu tinjau lagi.
