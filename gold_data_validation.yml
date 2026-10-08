@@ -1,0 +1,988 @@
+default:
+  ambang:
+    toleransi_volume: 0.15   # koridor jumlah baris = median historis +/- 15%
+    margin_null: 0.05        # kelonggaran di atas null rate historis terburuk
+  sla_lag_hari:
+    harian: 2.0    # SENGAJA bukan 3 jam (PDF) -- lihat poin 2 di header
+    backfill: 260.0
+  meta_audit:
+    wajib: [loaded_at]   # dimensi 12 LINEAGE AUDIT -- TERKONFIRMASI ada di semua dataset
+
+datasets:
+
+  # =========================================================================
+  # GOLD ARS -- raw transaksi HK/WM, SEBELUM transformasi
+  # sp_ETL_LoadSilver_ARS_Transactions. Window custom 07:00->07:00 (offset_jam: 7),
+  # BUKAN kalender 00:00-24:00 seperti dataset bronze_daily lainnya.
+  # =========================================================================
+
+  gold_ars:
+    deskripsi: "Gold ARS Transactions -- raw copy dbo.Gold_ARS_Readings, TANPA join/filter. Window custom 07:00->07:00 hari berikutnya (SAMA dgn idempotency delete sp_ETL_LoadSilver_ARS_Transactions Step 1), BUKAN kalender 00:00-24:00 biasa."
+
+    sumber:
+      s3: "s3://${S3_BUCKET_NAME}/datalake/gold/ars/"
+      partisi: harian
+
+      sql_server:
+        tabel: "dbo.Gold_ARS_Readings"
+        kolom_waktu: recorded_at
+        offset_jam: 7
+
+    # DIMENSI 11: Storage Safety
+    ukuran_berkas:
+      rentang: [1000, 5000000000]   # ← PERBAIKAN: 1 KB - 5 GB
+
+    # DIMENSI 3: Freshness & DIMENSI 5: Uniqueness
+    kunci:
+      waktu: recorded_at                # ← Dimensi 3
+      waktu_muat: loaded_at             # ← Dimensi 12
+      surrogate: device_id              # ← Dimensi 5 (pastikan device_id unique)
+
+    # DIMENSI 1: Schema, DIMENSI 4: Missingness, DIMENSI 6: Integrity, DIMENSI 7: Distribution
+    kolom:
+      # --- DIMENSI 1: Schema & DIMENSI 4: Missingness ---
+      - {nama: device_id, tipe: string}
+      - {nama: recorded_at, tipe: datetime}
+      - {nama: vendor, tipe: string}
+      - {nama: brand, tipe: string}
+      - {nama: connectivity, tipe: string}
+      - {nama: is_manual, tipe: boolean, wajib: false}
+
+      # --- DIMENSI 6: Integrity (Referensi ke tabel master) ---
+      - {nama: plantation_code, tipe: string}
+      - {nama: region_name, tipe: string}
+      - {nama: company_code, tipe: string, referensi: true, relasi: 'bronze_estate_mapping.CompanyCode', sumber: 'bronze_estate_mapping'}
+      - {nama: est_code, tipe: string, referensi: true, relasi: 'bronze_estate_mapping.EstCode', sumber: 'bronze_estate_mapping'}
+      - {nama: est_new_code, tipe: string, referensi: true, relasi: 'bronze_estate_mapping.EstNewCode', sumber: 'bronze_estate_mapping'}
+      - {nama: est_code_sap, tipe: string, referensi: true, relasi: 'bronze_estate_mapping.EstCodeSAP', sumber: 'bronze_estate_mapping'}
+
+      - {nama: block_gis, tipe: string}
+      - {nama: block_sap, tipe: string}
+
+      # --- DIMENSI 7: Distribution & DIMENSI 4: Missingness ---
+      - {nama: rainfall_mm, tipe: decimal, profil_distribusi: true, wajib: false}   # ← PERBAIKAN
+
+      - {nama: rainfall_source, tipe: string}
+
+      # --- DIMENSI 6: Integrity (Flag DQ) ---
+      - {nama: dq_rainfall_valid, tipe: boolean, flag_dq: true}      # ← PERBAIKAN
+      - {nama: dq_block_available, tipe: boolean, flag_dq: true}     # ← PERBAIKAN
+      - {nama: dq_duplicate_flag, tipe: boolean, flag_dq: true}      # ← PERBAIKAN
+
+      # --- DIMENSI 12: Lineage & Auditability ---
+      - {nama: loaded_at, tipe: datetime}
+
+    # # DIMENSI 6: Integrity (Aturan Konsistensi)
+    # sama_nilai:
+    #   - kolom: [rainfall_mm, rainfall_source]
+    #     aturan: 'rainfall_mm IS NOT NULL AND rainfall_source IS NOT NULL OR rainfall_mm IS NULL AND rainfall_source IS NULL'
+
+    # # DIMENSI 6: Integrity (Aturan Urutan Waktu)
+    # urutan_waktu:
+    #   - kolom: recorded_at
+    #     aturan: '<= loaded_at'
+
+  gold_awl:
+    deskripsi: "Gold AWL Transactions -- raw copy dbo.Gold_AWL_Readings, TANPA join/filter. Window custom 07:00->07:00 hari berikutnya (SAMA dgn idempotency delete sp_ETL_LoadSilver_ARS_Transactions Step 1), BUKAN kalender 00:00-24:00 biasa."
+
+    sumber:
+      s3: "s3://${S3_BUCKET_NAME}/datalake/gold/awl/"
+      partisi: harian
+
+      sql_server:
+        tabel: "dbo.Gold_AWL_Readings"
+        kolom_waktu: recorded_at
+        offset_jam: 7
+
+    # DIMENSI 11: Storage Safety
+    ukuran_berkas:
+      rentang: [1000, 5000000000]
+
+    # DIMENSI 3: Freshness, DIMENSI 5: Uniqueness
+    kunci:
+      waktu: recorded_at
+      waktu_muat: loaded_at
+      surrogate: device_id   # ← TAMBAHKAN: Aktifkan Uniqueness
+
+    # DIMENSI 1: Schema, DIMENSI 4: Missingness, DIMENSI 6: Integrity, DIMENSI 7: Distribution
+    kolom:
+      - {nama: device_id, tipe: string}
+      - {nama: recorded_at, tipe: datetime}
+      - {nama: vendor, tipe: string}
+      - {nama: device_type, tipe: string}
+      - {nama: connectivity, tipe: string}
+      - {nama: is_manual, tipe: boolean, wajib: false}
+      - {nama: latitude, tipe: string}
+      - {nama: longitude, tipe: string}
+      - {nama: plantation_code, tipe: string}
+      - {nama: region_name, tipe: string}
+
+      # DIMENSI 6: Integrity (Referensi ke master)
+      - {nama: company_code, tipe: string, referensi: true, relasi: 'bronze_estate_mapping.CompanyCode', sumber: 'bronze_estate_mapping'}
+      - {nama: est_code, tipe: string, referensi: true, relasi: 'bronze_estate_mapping.EstCode', sumber: 'bronze_estate_mapping'}
+      - {nama: est_newCode, tipe: string, referensi: true, relasi: 'bronze_estate_mapping.EstNewCode', sumber: 'bronze_estate_mapping'}
+      - {nama: est_codeSAP, tipe: string, referensi: true, relasi: 'bronze_estate_mapping.EstCodeSAP', sumber: 'bronze_estate_mapping'}
+
+      - {nama: blockGIS_id, tipe: string}
+      - {nama: blockSAP_id, tipe: string, wajib: false}
+
+      # DIMENSI 7: Distribution & DIMENSI 1: Schema
+      - {nama: water_level_cm, tipe: float, profil_distribusi: true}   # ← PERBAIKAN: float → decimal
+      - {nama: water_level_source, tipe: string}
+      - {nama: battery_pct, tipe: float, profil_distribusi: true}       # ← PERBAIKAN: float → decimal
+      - {nama: signal_dbm, tipe: float, profil_distribusi: true}        # ← PERBAIKAN: float → decimal
+
+      # DIMENSI 6: Integrity (Flag DQ)
+      - {nama: dq_water_level_valid, tipe: boolean, flag_dq: true}
+      - {nama: dq_gps_available, tipe: boolean, flag_dq: true}
+
+      # DIMENSI 12: Lineage & Auditability
+      - {nama: loaded_at, tipe: datetime}
+
+    # # DIMENSI 6: Integrity (Aturan Konsistensi)
+    # sama_nilai:
+    #   - [latitude, longitude]   # GPS harus konsisten
+
+    # # DIMENSI 6: Integrity (Aturan Urutan Waktu)
+    # urutan_waktu:
+    #   - kolom: recorded_at
+    #     aturan: '<= loaded_at'
+
+  gold_master_awm:
+    deskripsi: "Gold Master AWM -- master data AWM assets dari berbagai sumber (bridge, weir, culvert, dam, flap_gate, pump_house, water_gate, siphon). Snapshot harian dari T_Master_AWM_All."
+
+    sumber:
+      s3: "s3://${S3_BUCKET_NAME}/datalake/gold/awm/master_awm/"
+      partisi: snapshot
+
+      sql_server:
+        tabel: "dbo.Gold_Master_AWM"
+        kolom_waktu: loaded_at
+        offset_jam: 7
+
+    ukuran_berkas:
+      rentang: [1000, 5000000000]
+    kunci:
+      waktu: loaded_at
+      waktu_muat: loaded_at
+      surrogate: global_id
+
+    kolom:
+      # --- Identitas ---
+      - {nama: gold_id, tipe: integer}                    # ← TAMBAHKAN
+      - {nama: global_id, tipe: string}
+      - {nama: objectid, tipe: integer, wajib: false}
+
+      # --- Asset Type ---
+      - {nama: asset_type, tipe: string}
+      - {nama: asset_type_label, tipe: string}
+      - {nama: asset_subtype, tipe: string, wajib: false}
+      - {nama: asset_subtype_label, tipe: string, wajib: false}
+
+      # --- Estate ---
+      - {nama: plantation, tipe: string, wajib: false}
+      - {nama: grouping, tipe: string, wajib: false}
+      - {nama: company_code, tipe: string, referensi: true, relasi: 'bronze_estate_mapping.CompanyCode', sumber: 'bronze_estate_mapping'}
+      - {nama: est_code, tipe: string, referensi: true, relasi: 'bronze_estate_mapping.EstCode', sumber: 'bronze_estate_mapping'}
+      - {nama: est_new_code, tipe: string, referensi: true, relasi: 'bronze_estate_mapping.EstNewCode', sumber: 'bronze_estate_mapping'}
+      - {nama: est_code_sap, tipe: string, referensi: true, relasi: 'bronze_estate_mapping.EstCodeSAP', sumber: 'bronze_estate_mapping'}
+
+      # --- Lokasi ---
+      - {nama: afdeling, tipe: string, wajib: false}      # ← Seharusnya NOT NULL di SQL, tapi data ada null
+      - {nama: block_gis, tipe: string, wajib: false}
+      - {nama: block_sap, tipe: string, wajib: false}
+
+      # --- Spesifikasi Fisik (100% null untuk non-relevan) ---
+      - {nama: length, tipe: decimal, profil_distribusi: true, wajib: false}
+      - {nama: width, tipe: decimal, profil_distribusi: true, wajib: false}
+      - {nama: flow_dir, tipe: float, profil_distribusi: true, wajib: false}
+
+      # --- Kondisi ---
+      - {nama: bridge_event_type, tipe: float, wajib: false}
+      - {nama: condition, tipe: float, wajib: false}
+      - {nama: condition_label, tipe: string, wajib: false}
+      - {nama: status_object, tipe: integer, wajib: false}
+      - {nama: status_object_label, tipe: string, wajib: false}
+      - {nama: status_asset, tipe: integer, wajib: false}
+      - {nama: status_asset_label, tipe: string, wajib: false}
+      - {nama: fungsi, tipe: float, wajib: false}
+      - {nama: source, tipe: float, wajib: false}
+
+      # --- QC ---
+      - {nama: qc, tipe: float, wajib: false}
+      - {nama: qc_remarks, tipe: string, wajib: false}
+      - {nama: qc_user, tipe: string, wajib: false}
+      - {nama: qc_tanggal, tipe: datetime, wajib: false}
+
+      # --- Survey ---
+      - {nama: surveyor, tipe: string, wajib: false}
+      - {nama: survey_date, tipe: datetime, wajib: false}
+      - {nama: remark, tipe: string, wajib: false}
+
+      # --- Budget ---
+      - {nama: year, tipe: float, profil_distribusi: true, wajib: false}
+      - {nama: month, tipe: float, profil_distribusi: true, wajib: false}
+      - {nama: duration, tipe: float, wajib: false}
+      - {nama: year_budget, tipe: float, wajib: false}
+      - {nama: budget_ref_id, tipe: string, wajib: false}
+      - {nama: budget_price, tipe: float, wajib: false}
+
+      # --- Variant ---
+      - {nama: variant, tipe: float, wajib: false}
+      - {nama: variant_label, tipe: string, wajib: false}
+      - {nama: variant_dimensi, tipe: string, wajib: false}
+      - {nama: reference_id, tipe: string, wajib: false}
+      - {nama: object_ref, tipe: string, wajib: false}
+
+      # --- Audit ---
+      - {nama: created_user, tipe: string, wajib: false}
+      - {nama: created_date, tipe: datetime, wajib: false}
+      - {nama: last_edited_user, tipe: string, wajib: false}
+      - {nama: last_edited_date, tipe: datetime, wajib: false}
+
+      # --- Weir Specific ---
+      - {nama: weir_spillway_level, tipe: decimal, profil_distribusi: true, wajib: false}
+      - {nama: weir_count, tipe: float, wajib: false}
+      - {nama: weir_status, tipe: float, wajib: false}
+
+      # --- Culvert Specific ---
+      - {nama: culvert_pipe_count, tipe: float, wajib: false}
+
+      # --- Flap Gate Specific ---
+      - {nama: flap_gate_door_type, tipe: float, wajib: false}
+      - {nama: door_count, tipe: float, wajib: false}
+      - {nama: flap_gate_status, tipe: string, wajib: false}
+
+      # --- Siphon Specific ---
+      - {nama: siphon_material, tipe: float, wajib: false}
+      - {nama: siphon_size, tipe: decimal, profil_distribusi: true, wajib: false}
+      - {nama: siphon_diameter, tipe: decimal, profil_distribusi: true, wajib: false}
+      - {nama: siphon_count, tipe: float, wajib: false}
+
+      # --- Audit ---
+      - {nama: loaded_at, tipe: datetime}
+
+    # HAPUS sama_nilai untuk est_code dan block_gis!
+    # sama_nilai:
+    #   - [est_code, est_new_code]   ← HAPUS
+    #   - [block_gis, block_sap]     ← HAPUS
+
+    # urutan_waktu:
+    #   - kolom: loaded_at
+    #     aturan: '>= created_date OR created_date IS NULL'
+  
+  gold_master_block:
+    deskripsi: "Gold Master Block -- master data block mapping dari berbagai sumber (MGB2, COR, SAP, PLA). Snapshot harian dari T_Master_Block_All."
+
+    sumber:
+      s3: "s3://${S3_BUCKET_NAME}/datalake/gold/mgb/master_block/"
+      partisi: snapshot
+
+      sql_server:
+        tabel: "dbo.Gold_Master_Block"
+        kolom_waktu: loaded_at
+        offset_jam: 7
+
+    # DIMENSI 11: Storage Safety
+    ukuran_berkas:
+      rentang: [1000, 5000000000]
+    
+    # DIMENSI 3: Freshness, DIMENSI 5: Uniqueness
+    kunci:
+      waktu: loaded_at
+      waktu_muat: loaded_at
+      surrogate: gold_id
+
+    # DIMENSI 1: Schema, DIMENSI 4: Missingness, DIMENSI 6: Integrity, DIMENSI 7: Distribution
+    kolom:
+      # --- Identitas ---
+      - {nama: gold_id, tipe: integer, wajib: false}
+
+      # --- Estate (Referensi ke master) ---
+      - {nama: plantation, tipe: string, wajib: false}
+      - {nama: grouping, tipe: string, wajib: false}
+      - {nama: company_code, tipe: string, referensi: true, relasi: 'bronze_estate_mapping.CompanyCode', sumber: 'bronze_estate_mapping'}
+      - {nama: est_code, tipe: string, referensi: true, relasi: 'bronze_estate_mapping.EstCode', sumber: 'bronze_estate_mapping'}
+      - {nama: est_new_code, tipe: string, referensi: true, relasi: 'bronze_estate_mapping.EstNewCode', sumber: 'bronze_estate_mapping'}
+      - {nama: est_code_sap, tipe: string, referensi: true, relasi: 'bronze_estate_mapping.EstCodeSAP', sumber: 'bronze_estate_mapping'}
+
+      # --- Lokasi ---
+      - {nama: afdeling, tipe: string, wajib: false}
+      - {nama: block_gis, tipe: string, wajib: false}
+      - {nama: block_sap, tipe: string, wajib: false}
+
+      # --- Referensi Eksternal ---
+      - {nama: zkprs, tipe: string, wajib: false}
+      - {nama: koperasi_name, tipe: string, wajib: false}
+
+      # --- Agronomi ---
+      - {nama: yop, tipe: integer, profil_distribusi: true, wajib: false}
+      - {nama: progeny, tipe: string, wajib: false}
+      - {nama: owner_code, tipe: string, wajib: false}
+      - {nama: ownership, tipe: string, wajib: false}
+      - {nama: topografi, tipe: string, wajib: false}
+      - {nama: deskripsi_topografi, tipe: string, wajib: false}
+      - {nama: soil, tipe: string, wajib: false}
+      - {nama: crop_type, tipe: string, wajib: false}
+
+      # --- Survey Stage (Referensi ke MGB) ---
+      - {nama: survey_stage, tipe: integer, wajib: false}
+      - {nama: survey_stage_desc, tipe: string, wajib: false}
+      - {nama: survey_stage_desc_full, tipe: string, wajib: false}
+
+      # --- Fase Tanaman ---
+      - {nama: fase_tanaman, tipe: string, wajib: false}
+
+      # --- Luas & Produksi (SAP) ---
+      - {nama: gross_ha_SAP, tipe: decimal, profil_distribusi: true, wajib: false}
+      - {nama: planted_ha_SAP, tipe: decimal, profil_distribusi: true, wajib: false}
+      - {nama: total_palm_SAP, tipe: integer, profil_distribusi: true, wajib: false}
+      - {nama: stand_per_ha_SAP, tipe: decimal, profil_distribusi: true, wajib: false}
+
+      # --- Status (Tanggal) ---
+      - {nama: active_since, tipe: datetime, wajib: false}
+      - {nama: inactive_since, tipe: datetime, wajib: false}
+      - {nama: non_harvest_since, tipe: datetime, wajib: false}
+
+      # --- Status (Boolean) ---
+      - {nama: is_currently_active, tipe: boolean, wajib: false}
+      - {nama: is_sap_active, tipe: boolean, wajib: false}
+      - {nama: status_bmp, tipe: boolean, wajib: false}
+
+      # --- Audit ---
+      - {nama: update_id, tipe: integer, wajib: false}
+      - {nama: update_name, tipe: string, wajib: false}
+      - {nama: update_date, tipe: datetime, wajib: false}
+
+      # --- DIMENSI 12: Lineage & Auditability ---
+      - {nama: loaded_at, tipe: datetime}
+      # - {nama: snapshot_date, tipe: date, wajib: false}
+
+    # # DIMENSI 6: Integrity (Aturan Konsistensi)
+    # sama_nilai:
+    #   - [est_code, est_new_code]
+    #   - [block_gis, block_sap]
+
+    # # DIMENSI 6: Integrity (Aturan Urutan Waktu)
+    # urutan_waktu:
+    #   - kolom: active_since
+    #     aturan: '<= inactive_since OR inactive_since IS NULL'
+    #   - kolom: loaded_at
+    #     aturan: '>= update_date OR update_date IS NULL'
+  # gold_master_estate_corrected.yaml
+  gold_master_estate:
+    deskripsi: "Gold Master Estate - Data master kebun/estate dari sumber enterprise"
+    
+    sumber:
+      s3: "s3://${S3_BUCKET_NAME}/datalake/gold/cor/master_estate/"
+      partisi: snapshot
+      
+      sql_server:
+        tabel: "dbo.Gold_Master_Estate"
+        kolom_waktu: loaded_at
+        offset_jam: 7
+
+    # DIMENSI 11: Storage Safety
+    ukuran_berkas:
+      rentang: [1000, 5000000000]
+
+    # DIMENSI 3: Freshness, DIMENSI 5: Uniqueness
+    kunci:
+      waktu: snapshot_date
+      waktu_muat: loaded_at
+      surrogate: source_id  # Primary key unik
+
+    # DIMENSI 1: Schema, DIMENSI 4: Missingness, DIMENSI 6: Integrity
+    kolom:
+      # Primary/Identifier
+      - {nama: source_id, tipe: integer, wajib: true, deskripsi: "Surrogate key unik untuk master estate",profil_distribusi: true}
+      
+      # Master Estate Information
+      - {nama: plantation, tipe: string, wajib: true, deskripsi: "Nama plantation/kebun"}
+      - {nama: grouping, tipe: string, wajib: false, deskripsi: "Grouping/klaster kebun"}
+      - {nama: group_company_name, tipe: string, wajib: false, deskripsi: "Nama group perusahaan"}
+      
+      # Kode-kode Referensi (Integrity)
+      - {nama: company_code, tipe: string, wajib: false, referensi: true, 
+        relasi: 'bronze_estate_mapping.CompanyCode', sumber: 'bronze_estate_mapping',
+        deskripsi: "Kode perusahaan - referensi ke master mapping"}
+      
+      - {nama: est_code, tipe: string, wajib: false, referensi: true,
+        relasi: 'bronze_estate_mapping.EstCode', sumber: 'bronze_estate_mapping',
+        deskripsi: "Kode estate - referensi ke master mapping"}
+      
+      - {nama: est_new_code, tipe: string, wajib: false, referensi: true,
+        relasi: 'bronze_estate_mapping.EstNewCode', sumber: 'bronze_estate_mapping',
+        deskripsi: "Kode estate baru - referensi ke master mapping"}
+      
+      - {nama: est_code_sap, tipe: string, wajib: false, referensi: true,
+        relasi: 'bronze_estate_mapping.EstCodeSAP', sumber: 'bronze_estate_mapping',
+        deskripsi: "Kode estate SAP - referensi ke master mapping"}
+      
+      - {nama: new_est_name, tipe: string, wajib: false, deskripsi: "Nama estate terbaru"}
+      
+      # Regional Information
+      - {nama: region_id, tipe: integer, wajib: false, deskripsi: "ID region",profil_distribusi: true}
+      - {nama: region_group, tipe: string, wajib: false, deskripsi: "Group region"}
+      
+      # Flags dan Metadata
+      - {nama: has_sap_code, tipe: boolean, wajib: false, deskripsi: "Flag apakah memiliki kode SAP"}
+      
+      # Geographic Data (Bounding Box)
+      - {nama: x_min, tipe: decimal, wajib: false, deskripsi: "Longitude minimum (bounding box)",profil_distribusi: true}
+      - {nama: y_min, tipe: decimal, wajib: false, deskripsi: "Latitude minimum (bounding box)",profil_distribusi: true}
+      - {nama: x_max, tipe: decimal, wajib: false, deskripsi: "Longitude maximum (bounding box)",profil_distribusi: true}
+      - {nama: y_max, tipe: decimal, wajib: false, deskripsi: "Latitude maximum (bounding box)",profil_distribusi: true}
+      
+      # Monitoring Capabilities
+      - {nama: is_ombrometer_available, tipe: boolean, wajib: false, 
+        deskripsi: "Tersedia alat ukur ombrometer"}
+      - {nama: is_awl_monitored, tipe: boolean, wajib: false,
+        deskripsi: "Dimonitor AWL (Automatic Water Level)"}
+      - {nama: is_ars_monitored, tipe: boolean, wajib: false,
+        deskripsi: "Dimonitor ARS (Automatic Rain Station)"}
+      - {nama: is_manual_wl_tmat_monitored, tipe: boolean, wajib: false,
+        deskripsi: "Dimonitor manual water level TMAt"}
+      - {nama: is_manual_wl_tmas_monitored, tipe: boolean, wajib: false,
+        deskripsi: "Dimonitor manual water level TMAs"}
+      - {nama: is_manual_ombro_monitored, tipe: boolean, wajib: false,
+        deskripsi: "Dimonitor manual ombrometer"}
+      - {nama: is_klhk_monitored, tipe: boolean, wajib: false,
+        deskripsi: "Dimonitor KLHK (Kementerian Lingkungan Hidup)"}
+      
+      # DIMENSI 12: Lineage & Auditability
+      - {nama: loaded_at, tipe: datetime, wajib: true, 
+        deskripsi: "Timestamp saat data dimuat ke gold layer"}
+      - {nama: snapshot_date, tipe: datetime, wajib: true,
+        deskripsi: "Tanggal snapshot data"}
+    
+    # DIMENSI 7: Distribution & Profiling
+    distribusi:
+      - kolom: source_id
+        tipe: "unique_identifier"
+        expected: "incrementing"
+      
+      - kolom: region_id
+        tipe: "categorical"
+        expected_distribution: "grouped_by_region"
+      
+      - kolom: has_sap_code
+        tipe: "boolean"
+        expected_ratio: 0.8  # 80% memiliki SAP code
+      
+      - kolom: is_awl_monitored
+        tipe: "boolean"
+        expected_ratio: 0.3  # 30% dimonitor AWL
+    
+    # Validasi tambahan
+    validasi:
+      # Referential integrity checks
+      referential_integrity:
+        - kolom: company_code
+          source_table: "bronze_estate_mapping"
+          source_column: "CompanyCode"
+          required: false
+      
+        - kolom: est_code
+          source_table: "bronze_estate_mapping"
+          source_column: "EstCode"
+          required: false
+      
+      # Data quality checks
+      data_quality:
+        - check: "null_percentage"
+          threshold: 0.3  # Max 30% null allowed
+          columns: ["company_code", "est_code"]
+        
+        - check: "duplicate_check"
+          threshold: 0
+          columns: ["source_id"]
+        
+        - check: "geographic_bounds"
+          columns: ["x_min", "x_max", "y_min", "y_max"]
+          validation: "x_min < x_max AND y_min < y_max"
+
+  gold_master_ombrometer:
+    deskripsi: "Gold Master Ombrometer - Data master stasiun ombrometer/curh hujan dari berbagai sumber (RIF, SAP, API). Snapshot harian dari T_Master_Ombrometer_All."
+
+    sumber:
+      s3: "s3://${S3_BUCKET_NAME}/datalake/gold/cor/master_ombrometer/"
+      partisi: snapshot
+
+      sql_server:
+        tabel: "dbo.Gold_Master_Ombrometer"
+        kolom_waktu: loaded_at
+        offset_jam: 7
+
+    # DIMENSI 11: Storage Safety
+    ukuran_berkas:
+      rentang: [1000, 5000000000]
+
+    # DIMENSI 3: Freshness, DIMENSI 5: Uniqueness
+    kunci:
+      waktu: loaded_at
+      waktu_muat: loaded_at
+      surrogate: station_id
+
+    # DIMENSI 1: Schema, DIMENSI 4: Missingness, DIMENSI 6: Integrity, DIMENSI 7: Distribution
+    kolom:
+      # --- Identitas (Primary Key) ---
+      - {nama: station_id, tipe: string, deskripsi: "ID unik stasiun ombrometer",profil_distribusi: true}
+
+      # --- Referensi Eksternal ---
+      - {nama: station_id_sap, tipe: string, wajib: false, deskripsi: "ID stasiun dari SAP",profil_distribusi: true}
+      - {nama: station_sap, tipe: string, wajib: false, deskripsi: "Kode stasiun SAP",profil_distribusi: true}
+
+      # --- Status & Periode ---
+      - {nama: start_date, tipe: datetime, wajib: false, deskripsi: "Tanggal mulai operasional"}
+      - {nama: end_date, tipe: datetime, wajib: false, deskripsi: "Tanggal akhir operasional"}
+      - {nama: status, tipe: string, wajib: false, deskripsi: "Status stasiun (Active/Inactive)"}
+
+      # --- Audit / User ---
+      - {nama: create_by, tipe: integer, wajib: false, deskripsi: "ID user pembuat"}
+      - {nama: created_name, tipe: string, wajib: false, deskripsi: "Nama user pembuat"}
+      - {nama: create_date, tipe: datetime, wajib: false, deskripsi: "Tanggal pembuatan record"}
+
+      # --- DIMENSI 6: Integrity (Referensi ke master estate) ---
+      - {nama: plantation, tipe: string, wajib: false, deskripsi: "Nama plantation/kebun"}
+      - {nama: grouping, tipe: string, wajib: false, deskripsi: "Grouping/klaster kebun"}
+      - {nama: company_code, tipe: string, wajib: false, referensi: true, relasi: 'bronze_estate_mapping.CompanyCode', sumber: 'bronze_estate_mapping', deskripsi: "Kode perusahaan - referensi ke master mapping"}
+      - {nama: est_code, tipe: string, wajib: false, referensi: true, relasi: 'bronze_estate_mapping.EstCode', sumber: 'bronze_estate_mapping', deskripsi: "Kode estate - referensi ke master mapping",profil_distribusi: true}
+      - {nama: est_new_code, tipe: string, wajib: false, referensi: true, relasi: 'bronze_estate_mapping.EstNewCode', sumber: 'bronze_estate_mapping', deskripsi: "Kode estate baru - referensi ke master mapping",profil_distribusi: true}
+      - {nama: est_code_sap, tipe: string, wajib: false, referensi: true, relasi: 'bronze_estate_mapping.EstCodeSAP', sumber: 'bronze_estate_mapping', deskripsi: "Kode estate SAP - referensi ke master mapping",profil_distribusi: true}
+
+      # --- Lokasi ---
+      - {nama: location, tipe: string, wajib: false, deskripsi: "Lokasi stasiun (deskripsi)"}
+
+      # --- DIMENSI 12: Lineage & Auditability ---
+      - {nama: loaded_at, tipe: datetime, deskripsi: "Timestamp saat data dimuat ke gold layer"}
+      - {nama: snapshot_date, tipe: datetime, wajib: false, deskripsi: "Tanggal snapshot data"}
+
+    # DIMENSI 6: Integrity (Aturan Konsistensi)
+    sama_nilai:
+      - [est_code, est_code]
+      - [station_id, station_id]
+
+    # DIMENSI 7: Distribution
+    distribusi:
+      - kolom: create_by
+        tipe: "user_id"
+      - kolom: status
+        tipe: "categorical"
+        expected_values: ["Active", "Inactive", "Active", "Inactive"]
+  
+
+  # # DI SKIP KARENA PERBAIKAN DATA OLEH MAS ACIL
+  # gold_master_devices:
+  #   deskripsi: "Gold Master Devices - Data master perangkat stasiun ombrometer/curah hujan dari berbagai sumber (RIF, SAP, API). Snapshot harian dari T_Master_Devices_All."
+
+  #   sumber:
+  #     s3: "s3://${S3_BUCKET_NAME}/datalake/gold/iot/master_devices/"
+  #     partisi: snapshot
+
+  #     sql_server:
+  #       tabel: "dbo.Gold_Master_Devices"
+  #       kolom_waktu: loaded_at
+  #       offset_jam: 7
+
+  #   # DIMENSI 11: Storage Safety
+  #   ukuran_berkas:
+  #     rentang: [1000, 5000000000]
+
+  #   # DIMENSI 3: Freshness, DIMENSI 5: Uniqueness
+  #   kunci:
+  #     waktu: loaded_at
+  #     waktu_muat: loaded_at
+  #     surrogate: device_id
+
+  #   # DIMENSI 1: Schema, DIMENSI 4: Missingness, DIMENSI 6: Integrity, DIMENSI 7: Distribution
+  #   kolom:
+  #     # --- Informasi Sumber & Device ---
+  #     - {nama: source_system, tipe: string, wajib: false, deskripsi: "Sistem sumber data (RIF/SAP/API)", profil_distribusi: true}
+  #     - {nama: device_id, tipe: string, deskripsi: "ID unik perangkat stasiun", profil_distribusi: true}
+  #     - {nama: device_name, tipe: string, wajib: false, deskripsi: "Nama perangkat stasiun"}
+  #     - {nama: device_type, tipe: string, wajib: false, deskripsi: "Tipe perangkat stasiun", profil_distribusi: true}
+
+  #     # --- Lokasi Geografis ---
+  #     - {nama: longitude, tipe: decimal, wajib: false, deskripsi: "Koordinat bujur stasiun"}
+  #     - {nama: latitude, tipe: decimal, wajib: false, deskripsi: "Koordinat lintang stasiun"}
+
+  #     # --- DIMENSI 6: Integrity (Referensi ke master estate) ---
+  #     - {nama: plantation, tipe: string, wajib: false, deskripsi: "Nama plantation/kebun"}
+  #     - {nama: grouping, tipe: string, wajib: false, deskripsi: "Grouping/klaster kebun"}
+  #     - {nama: company_code, tipe: string, wajib: false, referensi: true, relasi: 'bronze_estate_mapping.CompanyCode', sumber: 'bronze_estate_mapping', deskripsi: "Kode perusahaan - referensi ke master mapping", profil_distribusi: true}
+  #     - {nama: est_code, tipe: string, wajib: false, referensi: true, relasi: 'bronze_estate_mapping.EstCode', sumber: 'bronze_estate_mapping', deskripsi: "Kode estate - referensi ke master mapping", profil_distribusi: true}
+  #     - {nama: est_new_code, tipe: string, wajib: false, referensi: true, relasi: 'bronze_estate_mapping.EstNewCode', sumber: 'bronze_estate_mapping', deskripsi: "Kode estate baru - referensi ke master mapping", profil_distribusi: true}
+  #     - {nama: est_code_sap, tipe: string, wajib: false, referensi: true, relasi: 'bronze_estate_mapping.EstCodeSAP', sumber: 'bronze_estate_mapping', deskripsi: "Kode estate SAP - referensi ke master mapping", profil_distribusi: true}
+
+  #     # --- Informasi Afdeling & Blok ---
+  #     - {nama: afdeling, tipe: string, wajib: false, deskripsi: "Afdeling kebun"}
+  #     - {nama: block_gis, tipe: string, wajib: false, deskripsi: "Kode blok dari GIS"}
+  #     - {nama: block_sap, tipe: string, wajib: false, deskripsi: "Kode blok dari SAP"}
+
+  #     # --- Informasi Brand ---
+  #     - {nama: brand, tipe: string, wajib: false, deskripsi: "Merek/brand perangkat", profil_distribusi: true}
+
+  #     # --- Sensor Bluetooth ---
+  #     - {nama: bluetooth, tipe: boolean, wajib: false, deskripsi: "Status koneksi bluetooth"}
+
+  #     # --- Informasi Sensor (Detail) ---
+  #     - {nama: sensor_id, tipe: string, wajib: false, deskripsi: "ID sensor"}
+  #     - {nama: sensor_signal, tipe: string, wajib: false, deskripsi: "Nilai sinyal sensor"}
+  #     - {nama: sensor_unit_signal, tipe: string, wajib: false, deskripsi: "Unit sinyal sensor"}
+  #     - {nama: sensor_battery, tipe: string, wajib: false, deskripsi: "Nilai baterai sensor"}
+  #     - {nama: sensor_unit_battery, tipe: string, wajib: false, deskripsi: "Unit baterai sensor"}
+  #     - {nama: sensor_rainfall, tipe: string, wajib: false, deskripsi: "Nilai curah hujan sensor"}
+  #     - {nama: sensor_unit_rainfall, tipe: string, wajib: false, deskripsi: "Unit curah hujan sensor"}
+  #     - {nama: sensor_waterlevel, tipe: string, wajib: false, deskripsi: "Nilai ketinggian air sensor"}
+  #     - {nama: sensor_unit_waterlevel, tipe: string, wajib: false, deskripsi: "Unit ketinggian air sensor"}
+
+  #     # --- Flag / Indikator Keberadaan ---
+  #     - {nama: has_location, tipe: boolean, wajib: false, deskripsi: "Indikator memiliki data lokasi"}
+  #     - {nama: has_est_code, tipe: boolean, wajib: false, deskripsi: "Indikator memiliki kode estate"}
+  #     - {nama: has_sensor_id, tipe: boolean, wajib: false, deskripsi: "Indikator memiliki ID sensor"}
+  #     - {nama: is_bluetooth, tipe: boolean, wajib: false, deskripsi: "Indikator terhubung via bluetooth"}
+  #     - {nama: has_signal_sensor, tipe: boolean, wajib: false, deskripsi: "Indikator memiliki sensor sinyal"}
+  #     - {nama: has_battery_sensor, tipe: boolean, wajib: false, deskripsi: "Indikator memiliki sensor baterai"}
+  #     - {nama: has_rainfall_sensor, tipe: boolean, wajib: false, deskripsi: "Indikator memiliki sensor curah hujan"}
+  #     - {nama: has_waterlevel_sensor, tipe: boolean, wajib: false, deskripsi: "Indikator memiliki sensor ketinggian air"}
+
+  #     # --- Status Device ---
+  #     - {nama: status_device, tipe: string, wajib: false, deskripsi: "Status perangkat stasiun", profil_distribusi: true}
+
+  #     # --- DIMENSI 12: Lineage & Auditability ---
+  #     - {nama: loaded_at, tipe: datetime, deskripsi: "Timestamp saat data dimuat ke gold layer"}
+  #     - {nama: snapshot_date, tipe: datetime, wajib: false, deskripsi: "Tanggal snapshot data"}
+
+  #   # DIMENSI 6: Integrity (Aturan Konsistensi)
+  #   sama_nilai:
+  #     - [est_code, est_code]
+
+  #   # DIMENSI 7: Distribution
+  #   distribusi:
+  #     - kolom: source_system
+  #       tipe: "categorical"
+  #       expected_values: ["RIF", "SAP", "API"]
+  #     - kolom: device_type
+  #       tipe: "categorical"
+  #     - kolom: brand
+  #       tipe: "categorical"
+  #     - kolom: status_device
+  #       tipe: "categorical"
+  #       expected_values: ["Active", "Inactive", "Maintenance"]
+
+  gold_data_tmat:
+    deskripsi: "Gold Data TMAT - Data ketinggian air tanah (TMAT) dari berbagai sumber. Data dipartisi secara mingguan."
+
+    sumber:
+      s3: "s3://${S3_BUCKET_NAME}/datalake/gold/pzo/data_tmat/"
+      partisi: mingguan
+
+      sql_server:
+        tabel: "dbo.Gold_Data_TMAT"
+        kolom_waktu: recorded_date
+        offset_jam: 7
+
+    # DIMENSI 11: Storage Safety
+    ukuran_berkas:
+      rentang: [1000, 5000000000]
+
+    # DIMENSI 3: Freshness, DIMENSI 5: Uniqueness
+    kunci:
+      waktu: recorded_date
+      waktu_muat: loaded_at 
+      surrogate: point_id
+
+    # DIMENSI 1: Schema, DIMENSI 4: Missingness, DIMENSI 6: Integrity, DIMENSI 7: Distribution
+    kolom:
+      # --- Identitas Utama ---
+      - {nama: point_id, tipe: string, deskripsi: "ID unik titik pengukuran", profil_distribusi: true}
+      - {nama: week_id, tipe: integer, wajib: false, deskripsi: "ID minggu pengukuran", profil_distribusi: true}
+
+      # --- DIMENSI 6: Integrity (Referensi ke master estate) ---
+      - {nama: plantation, tipe: string, wajib: false, deskripsi: "Nama plantation/kebun"}
+      - {nama: grouping, tipe: string, wajib: false, deskripsi: "Grouping/klaster kebun"}
+      - {nama: company_code, tipe: string, wajib: false, referensi: true, relasi: 'bronze_estate_mapping.CompanyCode', sumber: 'bronze_estate_mapping', deskripsi: "Kode perusahaan - referensi ke master mapping", profil_distribusi: true}
+      - {nama: est_code, tipe: string, wajib: false, referensi: true, relasi: 'bronze_estate_mapping.EstCode', sumber: 'bronze_estate_mapping', deskripsi: "Kode estate - referensi ke master mapping", profil_distribusi: true}
+      - {nama: est_new_code, tipe: string, wajib: false, referensi: true, relasi: 'bronze_estate_mapping.EstNewCode', sumber: 'bronze_estate_mapping', deskripsi: "Kode estate baru - referensi ke master mapping", profil_distribusi: true}
+      - {nama: est_code_sap, tipe: string, wajib: false, referensi: true, relasi: 'bronze_estate_mapping.EstCodeSAP', sumber: 'bronze_estate_mapping', deskripsi: "Kode estate SAP - referensi ke master mapping", profil_distribusi: true}
+
+      # --- Informasi Blok ---
+      - {nama: block_gis, tipe: string, wajib: false, deskripsi: "Kode blok dari GIS"}
+      - {nama: block_sap, tipe: string, wajib: false, deskripsi: "Kode blok dari SAP"}
+
+      # --- Informasi Piezo ---
+      - {nama: piezo_type_id, tipe: integer, wajib: false, deskripsi: "ID tipe piezo", profil_distribusi: true}
+      - {nama: piezo_class_id, tipe: integer, wajib: false, deskripsi: "ID kelas piezo", profil_distribusi: true}
+
+      # --- Lokasi Geografis ---
+      - {nama: point_latitude, tipe: decimal, wajib: false, deskripsi: "Koordinat lintang titik pengukuran"}
+      - {nama: point_longitude, tipe: decimal, wajib: false, deskripsi: "Koordinat bujur titik pengukuran"}
+
+      # --- Data Pengukuran ---
+      - {nama: recorded_date, tipe: datetime, deskripsi: "Tanggal recording data", profil_distribusi: true}
+      - {nama: ketinggian, tipe: decimal, wajib: false, deskripsi: "Nilai ketinggian air tanah (meter)"}
+      - {nama: unit, tipe: string, wajib: false, deskripsi: "Unit pengukuran ketinggian", profil_distribusi: true}
+      - {nama: kondisi, tipe: string, wajib: false, deskripsi: "Kondisi pengukuran", profil_distribusi: true}
+
+      # --- Informasi Indikator ---
+      - {nama: indicator_id, tipe: integer, wajib: false, deskripsi: "ID indikator", profil_distribusi: true}
+      - {nama: indicator_name, tipe: string, wajib: false, deskripsi: "Nama indikator", profil_distribusi: true}
+      - {nama: indicator_alias, tipe: string, wajib: false, deskripsi: "Alias indikator", profil_distribusi: true}
+
+      # --- Dimensi Waktu ---
+      - {nama: recorded_month, tipe: string, wajib: false, deskripsi: "Bulan recording"}
+      - {nama: recorded_week, tipe: string, wajib: false, deskripsi: "Minggu recording"}
+      - {nama: recorded_year, tipe: integer, wajib: false, deskripsi: "Tahun recording"}
+
+      # --- DIMENSI 12: Lineage & Auditability ---
+      - {nama: loaded_at, tipe: datetime, deskripsi: "Timestamp saat data dimuat ke gold layer"}
+      - {nama: snapshot_date, tipe: datetime, wajib: false, deskripsi: "Tanggal snapshot data"}
+
+    # DIMENSI 6: Integrity (Aturan Konsistensi)
+    sama_nilai:
+      - [est_code, est_new_code]
+      - [block_gis, block_sap]
+
+    # DIMENSI 6: Integrity (Aturan Urutan Waktu)
+    urutan_waktu:
+      - [recorded_date, loaded_at]
+
+    # DIMENSI 7: Distribution
+    distribusi:
+      - kolom: company_code
+        tipe: "categorical"
+      - kolom: est_code
+        tipe: "categorical"
+      - kolom: est_new_code 
+        tipe: "categorical"
+      - kolom: est_code_sap
+        tipe: "categorical"
+      - kolom: piezo_type_id
+        tipe: "categorical"
+      - kolom: piezo_class_id
+        tipe: "categorical"
+      - kolom: unit
+        tipe: "categorical"
+        expected_values: ["m", "cm", "mm"]
+      - kolom: kondisi
+        tipe: "categorical"
+        expected_values: ["Normal", "Kering", "Banjir", "Maintenance"]
+      - kolom: indicator_id
+        tipe: "categorical"
+      - kolom: indicator_name
+        tipe: "categorical"
+      - kolom: indicator_alias
+        tipe: "categorical"
+  
+
+
+
+  # =========================================================================
+  # GOLD MASTER TMAT — SQL SERVER AS SOURCE OF TRUTH
+  # =========================================================================
+
+  gold_master_tmat:
+    deskripsi: "Gold Master TMAT -- validasi schema dan kualitas data Parquet berdasarkan dbo.Gold_Master_TMAT di SQL Server."
+
+    sumber:
+      s3: "s3://${S3_BUCKET_NAME}/datalake/gold/pzo/master_tmat/"
+      partisi: snapshot
+
+      # DIMENSI 9 — REKONSILIASI SUMBER
+      # Konfigurasi SQL perlu disesuaikan dengan logic rekonsiliasi.
+      # sql_server:
+      #   tabel: "dbo.Gold_Master_TMAT"
+      #   kolom_waktu: loaded_at
+      #   offset_jam: 7
+
+    kunci:
+      surrogate: pie_record_id
+
+    kolom:
+      - {nama: gold_id,           tipe: integer}
+      - {nama: pie_record_id,     tipe: string}
+      - {nama: piezo_type_id,     tipe: integer, wajib: false}
+      - {nama: piezo_type_label,  tipe: string, wajib: false}
+      - {nama: piezo_class_id,    tipe: integer, wajib: false}
+      - {nama: piezo_class_label, tipe: string, wajib: false}
+      - {nama: device_name_iot,   tipe: string}
+      - {nama: plantation,        tipe: string, wajib: false}
+      - {nama: grouping_name,     tipe: string, wajib: false}
+      - {nama: company_code,      tipe: string, wajib: false}
+      - {nama: est_code,          tipe: string}
+      - {nama: est_new_code,      tipe: string, wajib: false}
+      - {nama: est_code_sap,      tipe: string, wajib: false}
+      - {nama: division,          tipe: string, wajib: false}
+      - {nama: block_mapping,     tipe: string}
+      - {nama: unit_pemantauan,   tipe: string}
+      - {nama: image_location_url, tipe: string, wajib: false}
+      - {nama: latitude,          tipe: decimal}
+      - {nama: longitude,         tipe: decimal}
+      - {nama: jarak_meter,       tipe: decimal, wajib: false, profil_distribusi: true, satuan: "meter"}
+      - {nama: jenis,             tipe: string}
+      - {nama: status,            tipe: string}
+      - {nama: user_id_editor,    tipe: integer, wajib: false}
+      - {nama: nama_user_edit,    tipe: string, wajib: false}
+      - {nama: registered_date,   tipe: datetime}
+      - {nama: last_update,       tipe: datetime}
+      - {nama: is_klhk,           tipe: boolean}
+      - {nama: loaded_at,         tipe: datetime}
+
+
+    relasi:
+      - [est_new_code, est_code_sap]
+
+    urutan_waktu:
+      - [last_update, registered_date]
+
+
+
+  # =========================================================================
+  # GOLD DATA TMAS — SQL SERVER AS SOURCE OF TRUTH
+  # =========================================================================
+
+  gold_data_tmas:
+    deskripsi: "Gold Data TMAS -- validasi schema dan kualitas data Parquet berdasarkan dbo.Gold_WL_TMAS_Readings di SQL Server."
+
+    sumber:
+      s3: "s3://kpn-gis-s3-bucket/datalake/gold/wlr/data_tmas/"
+      partisi: harian
+
+      # DIMENSI 9 — REKONSILIASI SUMBER
+      # Belum diaktifkan sampai filter tanggal dan logic rekonsiliasi dikonfirmasi.
+      # sql_server:
+      #   tabel: "dbo.Gold_WL_TMAS_Readings"
+      #   kolom_waktu: measurement_date
+      #   offset_jam: 0
+
+    # DIMENSI 5 — UNIQUENESS
+    kunci:
+      surrogate: measurement_id
+      waktu: measurement_date
+
+    # DIMENSI 6 — INTEGRITY
+    # Aktifkan setelah diverifikasi dengan SQL.
+    # urutan_waktu:
+    #   - [input_date, measurement_date]
+
+    kolom:
+      - {nama: gold_id,                 tipe: integer}
+      - {nama: measurement_id,          tipe: integer}
+      - {nama: station_id,              tipe: string}
+      - {nama: station_name,            tipe: string}
+      - {nama: station_type_id,         tipe: integer}
+      - {nama: station_type_label,      tipe: string}
+      - {nama: zona_id,                 tipe: string, wajib: false}
+      - {nama: zona_name,               tipe: string, wajib: false}
+      - {nama: plantation,              tipe: string}
+      - {nama: grouping_name,           tipe: string}
+      - {nama: company_code,            tipe: string}
+      - {nama: est_code,                tipe: string}
+      - {nama: est_new_code,            tipe: string, wajib: false}
+      - {nama: est_code_sap,            tipe: string, wajib: false}
+      - {nama: latitude,                tipe: decimal, wajib: false}
+      - {nama: longitude,               tipe: decimal, wajib: false}
+      - {nama: accuracy,                tipe: decimal, wajib: false}
+      - {nama: elevasi_tanah,           tipe: decimal, wajib: false}
+      - {nama: frequency,               tipe: integer, wajib: false}
+      - {nama: status,                  tipe: string}
+      - {nama: measurement_date,        tipe: datetime}
+      - {nama: measurement_date_only,   tipe: datetime}
+      - {nama: input_date,              tipe: datetime, wajib: false}
+      - {nama: station_registered_date, tipe: datetime, wajib: false}
+      - {nama: ketinggian, tipe: decimal, wajib: false, profil_distribusi: true}
+      - {nama: unit,                    tipe: string}
+      - {nama: target_wl_history_id, tipe: integer, wajib: false}
+      - {nama: target_wl, tipe: decimal, wajib: false, profil_distribusi: true}
+      - {nama: has_target,              tipe: boolean}
+      - {nama: water_level_gap, tipe: decimal, wajib: false, profil_distribusi: true}
+      - {nama: is_below_target,         tipe: boolean}
+      - {nama: user_id,                 tipe: integer, wajib: false}
+      - {nama: nama_user,               tipe: string, wajib: false}
+      - {nama: loaded_at,               tipe: datetime}
+
+
+    # DIMENSI 6 — INTEGRITY
+      # SQL SERVER VERIFIED:
+      #
+      # 1. measurement_date_only = DATE(measurement_date)
+      # 2. has_target = 0 -> target_wl IS NULL
+      # 3. has_target = 1 -> target_wl IS NOT NULL
+      # 4. ketinggian IS NULL -> water_level_gap IS NULL
+      #    (for records with a target)
+    urutan_waktu:
+      - [loaded_at, measurement_date]
+
+   
+
+
+
+  # =========================================================================
+  # GOLD DATA RS — SQL SERVER AS SOURCE OF TRUTH
+  # =========================================================================
+
+  gold_data_rs:
+    deskripsi: "Gold Data RS -- validasi schema dan kualitas data Parquet berdasarkan dbo.Gold_RS_Readings di SQL Server."
+
+    sumber:
+      s3: "s3://kpn-gis-s3-bucket/datalake/gold/rs/data_rs/"
+      partisi: harian
+
+      # DIMENSI 9 — REKONSILIASI SUMBER
+      # Belum diaktifkan sampai logic rekonsiliasi dikonfirmasi.
+      # sql_server:
+      #   tabel: "dbo.Gold_RS_Readings"
+      #   kolom_waktu: period_date
+      #   offset_jam: 0
+
+    kunci:
+      surrogate: gold_id
+      waktu: period_date
+
+    kolom:
+      - {nama: gold_id,                 tipe: integer}
+      - {nama: station_id,              tipe: string}
+      - {nama: station_id_sap,          tipe: string}
+      - {nama: station_sap,             tipe: string}
+      - {nama: start_date,              tipe: datetime, wajib: false}
+      - {nama: end_date,                tipe: datetime, wajib: false}
+      - {nama: status,                  tipe: string, wajib: false}
+      - {nama: create_by,               tipe: integer, wajib: false}
+      - {nama: created_name,            tipe: string, wajib: false}
+      - {nama: create_date,             tipe: datetime, wajib: false}
+      - {nama: plantation,              tipe: string}
+      - {nama: grouping,                tipe: string}
+      - {nama: company_code,            tipe: string}
+      - {nama: est_code,                tipe: string}
+      - {nama: est_new_code,            tipe: string, wajib: false}
+      - {nama: est_code_sap,            tipe: string, wajib: false}
+      - {nama: location,                tipe: string, wajib: false}
+
+      # DIMENSI 7 — DISTRIBUTION
+
+      - {nama: rain_day_flag,           tipe: boolean}
+      - {nama: rain_category,           tipe: string}
+
+      # DIMENSI 7 — DISTRIBUTION
+      - {nama: rainfall_mm,     tipe: decimal, wajib: false, profil_distribusi: true}
+      - {nama: rainfall_mtd_mm, tipe: decimal, profil_distribusi: true}
+      - {nama: rain_days_mtd,   tipe: integer, profil_distribusi: true}
+      - {nama: rainfall_ytd_mm, tipe: decimal, profil_distribusi: true}
+      - {nama: rain_days_ytd,   tipe: integer, profil_distribusi: true}
+
+      - {nama: is_spraying_suitable,    tipe: boolean}
+      - {nama: is_fertilizing_suitable, tipe: boolean}
+      - {nama: is_harvest_risky,        tipe: boolean}
+      - {nama: is_flood_risk,           tipe: boolean}
+      - {nama: rank_in_plantation,      tipe: integer, profil_distribusi: true}
+      - {nama: rank_in_grouping,        tipe: integer}
+      - {nama: period_date,             tipe: datetime}
+      - {nama: loaded_at,               tipe: datetime}
+
+    # DIMENSI 6 — INTEGRITY
+    urutan_waktu:
+      - [loaded_at, period_date]
+      - [end_date, start_date]
+
+       
