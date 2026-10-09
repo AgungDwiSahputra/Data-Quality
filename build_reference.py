@@ -36,17 +36,21 @@ import json
 import os
 import sys
 
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
-
 from dqcore.profile import bangun_profil
 from dqcore.sources import daftar_partisi, SourceError
 from dqcore.spec import SpecError, load_datasets
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+
+try:
+    from dotenv import load_dotenv
+    _env_path = os.path.join(HERE, ".env")
+    if os.path.exists(_env_path):
+        load_dotenv(_env_path, override=False)
+    else:
+        load_dotenv()
+except ImportError:
+    pass
 DEFAULT_YAML = os.path.join(HERE, "datasets.yml")
 PROFIL_DIR = os.path.join(HERE, "profiles")
 

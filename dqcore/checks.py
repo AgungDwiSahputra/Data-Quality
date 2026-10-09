@@ -77,18 +77,43 @@ POLA_KOTOR: list[tuple[str, str, str]] = [
 ]
 
 
-def type_tokens() -> dict[str, str]:
+def type_tokens() -> dict[str, str | list[str]]:
     """
     Petakan tipe logis di datasets.yml -> token dtype yang dimengerti GX pada
     versi pandas yang sedang berjalan. pandas >= 3 melaporkan kolom string
     sebagai 'str', pandas 2.x sebagai 'object'.
+
+    Tipe yang SAH secara fisik punya beberapa lebar bit/representasi
+    (integer, float, datetime) dipetakan ke LIST kandidat, dicek lewat
+    ExpectColumnValuesToBeInTypeList di check_schema() -- parquet sah-sah
+    saja ditulis sebagai int32/float32 (bukan cuma int64/float64) tergantung
+    tool penulisnya (Spark/Pandas/dst), dan itu BUKAN pelanggaran schema
+    evolution, nilainya tetap "integer"/"float" secara logis. Token tunggal
+    dulu membuat kolom int32/float32 yang sah SELALU gagal Dimensi 1
+    (ditemukan di silver_ars_transactions kolom 'value' float32, lalu
+    silver_pzo_tmat_measurement 4 kolom Week* int32 -- 2026-09-09). Kolom
+    parquet bertipe DATE (bukan TIMESTAMP) juga masuk kategori ini: pandas
+    membacanya sbg dtype 'object' berisi objek datetime.date asli, dikenali
+    GX lewat nama tipe per-value 'date', BUKAN 'datetime64[us]'.
+
+    Tipe LAIN (string, boolean, decimal) TETAP token tunggal, dicek lewat
+    ExpectColumnValuesToBeOfType seperti semula -- dikonfirmasi langsung
+    (2026-09-09) ExpectColumnValuesToBeInTypeList TIDAK cocok dipakai utk
+    'str'/'object': gagal walau type_list=['str'] persis sama dgn
+    observed_value 'str' yang dilaporkannya sendiri (kemungkinan besar bug/
+    ketidakcocokan versi GX 1.19 dgn dtype 'str' baru pandas 3.x -- akar
+    masalahnya di metode _pandas ColumnValuesInTypeList yang selalu
+    isinstance() per-nilai, bukan cocok dgn cara pandas 3.x membungkus
+    ArrowStringArray). 'string'/'boolean'/'decimal' toh tidak pernah
+    butuh lebih dari satu token sah, jadi tidak ada kerugian tetap pakai
+    OfType utk ketiganya.
     """
     token_str = "str" if str(pd.Series([""], dtype=str).dtype) == "str" else "object"
     return {
-        "integer": "int64",
-        "float": "float64",
+        "integer": ["int64", "int32", "int16", "int8"],
+        "float": ["float64", "float32", "float16"],
         "string": token_str,
-        "datetime": "datetime64[us]",
+        "datetime": ["datetime64[us]", "datetime64[ns]", "datetime64[ms]", "datetime64[s]", "date"],
         "boolean": "bool",
         # decimal128 dari parquet tidak punya dtype numerik native di pandas.
         "decimal": "object",
@@ -289,8 +314,15 @@ def check_schema(r: Runner, spec):
                     "asing yang muncul tanpa sepengetahuan pipeline hilir.")
 
     for k in spec.kolom:
-        r.check(cat, f"Tipe {k.nama} = {k.tipe} ({token[k.tipe]})",
-                gxe.ExpectColumnValuesToBeOfType(column=k.nama, type_=token[k.tipe]),
+        tok = token[k.tipe]
+        if isinstance(tok, list):
+            label = "/".join(tok)
+            exp = gxe.ExpectColumnValuesToBeInTypeList(column=k.nama, type_list=tok)
+        else:
+            label = tok
+            exp = gxe.ExpectColumnValuesToBeOfType(column=k.nama, type_=tok)
+        r.check(cat, f"Tipe {k.nama} = {k.tipe} ({label})",
+                exp,
                 raw=True,
                 catatan="Pelanggaran schema evolution paling berbahaya: kolom yang "
                         "namanya tetap sama tapi tipenya bergeser (mis. INT di "

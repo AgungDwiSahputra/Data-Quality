@@ -186,35 +186,38 @@ datasets:
     # applicable saat ini (bukan lupa/oversight). Kalau nanti ada kolom berformat tetap (mis. kode
     # device dgn pola digit tertentu), tambahkan 'regex:' di kolom itu.
 
-    # Kolom NYATA hasil scaffold.py thd data S3 sungguhan (2026-09-01, 974 partisi tersedia, 3 disampel). 'wajib' dihitung dari 3
-    # partisi yang disampel -- BUKAN jaminan penuh riwayat historis.
+    # Kolom NYATA hasil baca LANGSUNG partisi 2025-01-01 (671 baris, 2 file digabung) -- BUKAN
+    # sampel 3 partisi scaffold.py 2026-09-01 lagi. 'wajib'/rentang/nilai-unik di bawah HANYA
+    # mencerminkan HARI ITU SAJA (bahkan lebih sempit dari sampel 3-partisi biasa) -- kalau mau
+    # cakupan lebih representatif, jalankan scaffold.py --glob/--s3 penuh lalu bandingkan lagi.
     # (Dimensi 1 SCHEMA, 4 MISSINGNESS via 'wajib:', dan 8 CLEANLINESS/ENCODING otomatis aktif dari daftar ini, lihat header.)
     kolom:
-    - {nama: source, tipe: string}   # sumber data
-    - {nama: transaction_id, tipe: string}   # ID transaksi
-    - {nama: sensor_id, tipe: string}   # ID sensor
-    - {nama: sensor_name, tipe: string}   # nama sensor
-    - {nama: device_id, tipe: string}   # ID device
-    - {nama: device_name, tipe: string}   # nama device
-    - {nama: value, tipe: float}   # nilai pembacaan
-    - {nama: record_time, tipe: datetime}   # waktu record
-    - {nama: is_manual, tipe: integer, wajib: false}   # 0/1, null 100%
-    - {nama: sensor_category, tipe: string}   # kategori sensor
-    - {nama: jenis_device, tipe: string}   # jenis device
-    - {nama: sensor_unit, tipe: string}   # unit sensor
-    - {nama: brand, tipe: string}   # merk
-    - {nama: connectivity, tipe: string}   # konektivitas
-    - {nama: plantation, tipe: string}   # plantation
-    - {nama: grouping, tipe: string}   # grouping
-    - {nama: company_code, tipe: string}   # kode company
-    - {nama: est_code, tipe: string}   # kode estate
-    - {nama: est_new_code, tipe: string}   # kode estate baru
-    - {nama: est_code_sap, tipe: string}   # kode estate SAP
-    - {nama: block_gis, tipe: string}   # block GIS
-    - {nama: block_sap, tipe: string}   # block SAP
-    - {nama: loaded_at, tipe: datetime}   # waktu load. Nama TERKINI (sejak partisi 2026-09-08) --
-      # sebelumnya sempat 'etl_inserted_at' selama ~20 bulan (2025-01-08 s.d. 2026-09-07), lihat
-      # catatan skema evolution lengkap di 'urutan_waktu' & header di atas.
+    - {nama: source,          tipe: string}   # 2 nilai unik, panjang 2-2
+    - {nama: transaction_id,  tipe: string}   # 671 nilai unik, panjang 7-24
+    - {nama: sensor_id,       tipe: string}   # 28 nilai unik, panjang 7-36
+    - {nama: sensor_name,     tipe: string}   # 28 nilai unik, panjang 18-20
+    - {nama: device_id,       tipe: string}   # 28 nilai unik, panjang 6-27
+    - {nama: device_name,     tipe: string}   # 28 nilai unik, panjang 15-22
+    - {nama: value,           tipe: float}   # rentang data 0..32.4
+    - {nama: record_time,     tipe: datetime}   # waktu record
+    - {nama: is_manual,       tipe: integer}   # rentang data 0..0 -- SEMUA 0 & tidak null di
+      # partisi ini (beda dari sampel lama yg 100% null); tinjau ulang di partisi lain.
+    - {nama: sensor_category, tipe: string}   # 1 nilai unik, panjang 8-8
+    - {nama: jenis_device,    tipe: string}   # 1 nilai unik, panjang 8-8
+    - {nama: sensor_unit,     tipe: string}   # 1 nilai unik, panjang 2-2
+    - {nama: brand,           tipe: string}   # 3 nilai unik, panjang 9-12
+    - {nama: connectivity,    tipe: string}   # 1 nilai unik, panjang 13-13
+    - {nama: plantation,      tipe: string}   # 2 nilai unik, panjang 4-6
+    - {nama: grouping,        tipe: string}   # 4 nilai unik, panjang 8-13
+    - {nama: company_code,    tipe: string}   # 4 nilai unik, panjang 6-7
+    - {nama: est_code,        tipe: string}   # 23 nilai unik, panjang 3-3
+    - {nama: est_new_code,    tipe: string}   # 23 nilai unik, panjang 4-5
+    - {nama: est_code_sap,    tipe: string}   # 23 nilai unik, panjang 4-4
+    - {nama: block_gis,       tipe: string}   # 27 nilai unik, panjang 2-6
+    - {nama: block_sap,       tipe: string}   # 27 nilai unik, panjang 2-6
+    - {nama: loaded_at,       tipe: datetime}   # waktu load. Nama TERKINI (sejak partisi
+      # 2026-09-08) -- sebelumnya sempat 'etl_inserted_at' selama ~20 bulan (2025-01-08 s.d.
+      # 2026-09-07), lihat catatan skema evolution lengkap di 'urutan_waktu' & header di atas.
 
   # =========================================================================
   # SILVER AWL TRANSACTIONS -- hasil sp_ETL_LoadSilver_AWL_Transactions,
@@ -245,38 +248,346 @@ datasets:
     # standar format bisnis eksternal yang applicable pada skema ini saat ini, jadi 'regex:'
     # sengaja belum ditambahkan (bukan oversight).
 
-    # Kolom NYATA hasil scaffold.py thd data S3 sungguhan (2026-09-01, 974 partisi tersedia, 3 disampel). 'wajib' dihitung dari 3
-    # partisi yang disampel -- BUKAN jaminan penuh riwayat historis.
+    # Kolom NYATA hasil baca LANGSUNG partisi 2025-01-01 (3201 baris, 2 file digabung) -- BUKAN
+    # sampel 3 partisi scaffold.py 2026-09-01 lagi. 'wajib'/rentang/nilai-unik di bawah HANYA
+    # mencerminkan HARI ITU SAJA. PENTING: kolom 'ETL_InsertedAt' (ditemukan di partisi 2026-09-xx
+    # lewat validate.py sebelumnya) TIDAK ADA sama sekali di partisi 2025-01-01 -- baru muncul di
+    # skema belakangan, jadi SENGAJA tidak dimasukkan di sini (per permintaan "kolom yang ada di
+    # S3 pada 2025-01-01"). Kalau mau validasi partisi terbaru, kolom itu perlu ditambahkan lagi.
     # (Dimensi 1 SCHEMA, 4 MISSINGNESS via 'wajib:', dan 8 CLEANLINESS/ENCODING otomatis aktif dari daftar ini, lihat header.)
     kolom:
-      - {nama: Source, tipe: string}   # sumber data
-      - {nama: TransactionID, tipe: string}   # ID transaksi
-      - {nama: SensorID, tipe: string}   # ID sensor
-      - {nama: SensorName, tipe: string}   # nama sensor
-      - {nama: DeviceID, tipe: string}   # ID device
-      - {nama: DeviceName, tipe: string}   # nama device
-      - {nama: Value, tipe: float}   # nilai pembacaan
-      - {nama: RecordTime, tipe: datetime}   # waktu record
-      - {nama: IsManual, tipe: integer, wajib: false}   # 0/1, null 100%
-      - {nama: Latitude, tipe: string}   # latitude
-      - {nama: Longitude, tipe: string}   # longitude
-      - {nama: SensorCategory, tipe: string}   # kategori sensor
-      - {nama: JenisDevice, tipe: string}   # jenis device
-      - {nama: SensorUnit, tipe: string}   # unit sensor
-      - {nama: Brand, tipe: string}   # merk
-      - {nama: Connectivity, tipe: string}   # konektivitas
-      - {nama: Plantation, tipe: string}   # plantation
-      - {nama: Grouping, tipe: string}   # grouping
-      - {nama: CompanyCode, tipe: string}   # kode company
-      - {nama: EstCode, tipe: string}   # kode estate
-      - {nama: EstNewCode, tipe: string}   # kode estate baru
-      - {nama: EstCodeSAP, tipe: string}   # kode estate SAP
-      - {nama: BlockGIS, tipe: string}   # block GIS
-      - {nama: BlockSAP, tipe: string}   # block SAP
-      - {nama: loaded_at, tipe: datetime}   # waktu load
-      - {nama: ETL_InsertedAt, tipe: datetime, wajib: false}   # DITAMBAHKAN 2026-09-08: kolom nyata
-        # ditemukan di file S3 sungguhan lewat validate.py (Dimensi 1 SCHEMA gagal "jumlah kolom
-        # tepat 25, observasi 26" sebelum ini ditambahkan) -- TIDAK ada di scaffold 2026-09-01,
-        # kemungkinan kolom baru dari SQL Server yang belum sempat di-scaffold ulang. 'wajib: false'
-        # sementara krn belum ada histori null-rate utk kolom ini -- jalankan build_reference.py
-        # ulang lalu tinjau lagi.
+      - {nama: Source,         tipe: string}   # 2 nilai unik, panjang 2-2
+      - {nama: TransactionID,  tipe: string}   # 3201 nilai unik, panjang 7-24
+      - {nama: SensorID,       tipe: string}   # 216 nilai unik, panjang 7-36
+      - {nama: SensorName,     tipe: string}   # 28 nilai unik, panjang 12-30
+      - {nama: DeviceID,       tipe: string}   # 71 nilai unik, panjang 6-16
+      - {nama: DeviceName,     tipe: string}   # 71 nilai unik, panjang 21-27
+      - {nama: Value,          tipe: float}   # rentang data -0.0556..1049.45
+      - {nama: RecordTime,     tipe: datetime}   # waktu record
+      - {nama: IsManual,       tipe: integer}   # rentang data 0..1, tidak null di partisi ini
+        # (beda dari sampel lama yg 100% null); tinjau ulang di partisi lain.
+      - {nama: Latitude,       tipe: string}   # 70 nilai unik, panjang 5-19
+      - {nama: Longitude,      tipe: string}   # 70 nilai unik, panjang 8-18
+      - {nama: SensorCategory, tipe: string}   # 6 nilai unik, panjang 6-14
+      - {nama: JenisDevice,    tipe: string}   # 4 nilai unik, panjang 4-7
+      - {nama: SensorUnit,     tipe: string}   # 6 nilai unik, panjang 1-3
+      - {nama: Brand,          tipe: string}   # 2 nilai unik, panjang 11-12
+      - {nama: Connectivity,   tipe: string}   # 1 nilai unik, panjang 13-13
+      - {nama: Plantation,     tipe: string}   # 3 nilai unik, panjang 4-8
+      - {nama: Grouping,       tipe: string}   # 6 nilai unik, panjang 8-17
+      - {nama: CompanyCode,    tipe: string}   # 6 nilai unik, panjang 6-7
+      - {nama: EstCode,        tipe: string}   # 27 nilai unik, panjang 3-4
+      - {nama: EstNewCode,     tipe: string}   # 27 nilai unik, panjang 4-5
+      - {nama: EstCodeSAP,     tipe: string}   # 27 nilai unik, panjang 4-4
+      - {nama: BlockGIS,       tipe: string}   # 67 nilai unik, panjang 2-8
+      - {nama: BlockSAP,       tipe: string}   # 63 nilai unik, panjang 0-8 (ADA STRING KOSONG --
+        # panjang minimum 0, akan tertangkap Dimensi 4/8 sbg "string kosong tersembunyi")
+      - {nama: loaded_at,      tipe: datetime}   # waktu load
+
+  # =========================================================================
+  # SILVER PZO TMAT MEASUREMENT -- pembacaan manual TMAT (Tinggi Muka Air
+  # Tanah) piezometer, digabung dgn hierarki master (plantation/estate/
+  # device/indicator) & pengelompokan mingguan (WeekID/WeekStartDate/
+  # WeekEndDate). Partisi KALENDER HARIAN (recorded_year=/month=/day=),
+  # BUKAN mingguan seperti disebut jobs.py Fase 1 utk job Gold "tmat" lama
+  # (yang sudah dinonaktifkan/di-comment di sana) -- pipeline Silver ini
+  # tampaknya sudah dimigrasi ke pola partisi harian standar.
+  # =========================================================================
+
+  silver_pzo_tmat_measurement:
+    deskripsi: "Silver PZO TMAT Measurement -- pembacaan manual tinggi muka air piezometer per minggu, digabung dgn master plantation/estate/device/indicator."
+
+    sumber:
+      s3: "s3://${S3_BUCKET_NAME}/datalake/silver/pzo/tmat_measurement/" #s3://kpn-gis-s3-bucket/datalake/silver/pzo/tmat_measurement/
+      partisi: harian
+      # 'sql_server:' (=> DIMENSI 9 REKONSILIASI SUMBER) TIDAK ditambahkan -- konsisten dgn
+      # keputusan file ini yg dipersempit ke 6 dimensi PDF persis (lihat header atas).
+
+    # Dimensi 11 STORAGE SAFETY TIDAK diaktifkan -- konsisten dgn keputusan file ini (lihat header).
+
+    kunci:
+      # 'waktu'/'waktu_muat' (=> DIMENSI 3 FRESHNESS) TIDAK diaktifkan -- konsisten dgn header.
+      surrogate: MeasurementID    # DIVERIFIKASI 100% unik di seluruh 19 partisi (7514 baris)
+      bisnis: [PieRecordID, WeekID]   # => DIMENSI 5 UNIQUENESS -- DIVERIFIKASI 100% unik (0
+                                       # duplikat) di seluruh 19 partisi. PieRecordID SENDIRIAN
+                                       # TIDAK unik (cuma 2213 nilai unik dari 7514 baris -- satu
+                                       # piezometer wajar punya banyak baris lintas minggu) --
+                                       # scaffold.py sempat salah menebaknya sbg kunci.surrogate
+                                       # krn sampel 10 partisi kebetulan tidak menangkap piezometer
+                                       # yang sama di 2 minggu berbeda. Klasik kasus "wajib/unik
+                                       # dihitung dari sampel, bukan jaminan penuh riwayat".
+
+    # => DIMENSI 6 INTEGRITY (business logic consistency) -- DIVERIFIKASI 100% (bukan cuma
+    # sampel scaffold) thd seluruh 19 partisi: MeasurementDate SELALU berada di antara
+    # WeekStartDate & WeekEndDate.
+    urutan_waktu:
+      - [WeekEndDate, MeasurementDate]
+      - [MeasurementDate, WeekStartDate]
+
+    # => DIMENSI 6 INTEGRITY (referential 1:1) -- SEMUA DIVERIFIKASI 100% konsisten thd
+    # seluruh 19 partisi (bukan cuma sampel scaffold 10 partisi).
+    #
+    # [DeviceIOTID, DeviceIOTName] SENGAJA TIDAK dimasukkan walau 100% konsisten (diverifikasi
+    # manual) -- ExpectColumnPairValuesToBeInSet CRASH internal (pandas.errors.IndexingError:
+    # "Unalignable boolean Series provided as indexer") saat dijalankan thd pasangan kolom ini,
+    # dikonfirmasi 2026-09-09 dgn menjalankan expectation-nya langsung di luar Runner.check().
+    # Kemungkinan besar dipicu null rate SANGAT tinggi (97%) di kedua kolom -- pasangan relasi
+    # lain di bawah ini (0% null) tidak kena. Runner.check() saat ini MENELAN exception itu diam-
+    # diam (GX menangkapnya sendiri, res.success=False, res.result={} -- tidak ada Python
+    # exception yg lolos ke try/except kita), sehingga MUNCUL seperti kegagalan data biasa
+    # ("Observasi: None") padahal sebenarnya check-nya tidak pernah benar-benar jalan. Kalau
+    # nanti field GX/pandas memperbaiki bug ini, boleh dicoba diaktifkan lagi.
+    relasi:
+      - [EstCode, EstNewCode]
+      - [EstCode, EstCodeSAP]
+      - [EstNewCode, EstCodeSAP]
+      - [IndicatorName, IndicatorAlias]
+      - [IndicatorName, IndicatorAliasReport]
+      - [IndicatorAlias, IndicatorAliasReport]
+
+    # Dimensi 10 FORMAT & PATTERN COMPLIANCE: sama seperti dataset lain di file ini -- tidak ada
+    # standar format bisnis eksternal yang applicable saat ini, jadi 'regex:' belum ditambahkan.
+
+    # Kolom NYATA hasil baca LANGSUNG seluruh 19 partisi S3 sungguhan (2026-09-09, 7514 baris
+    # gabungan) -- BUKAN sampel scaffold.py 10 partisi (yang salah menyimpulkan PieRecordID unik
+    # & tidak menangkap kolom ETL_InsertedAt sama sekali). 'wajib' & statistik di bawah dihitung
+    # dari histori PENUH yang tersedia saat ini.
+    #
+    # SCHEMA EVOLUTION (pola SAMA PERSIS dgn silver_ars_transactions, DIVERIFIKASI 2026-09-09):
+    # kolom audit berganti nama 2x: 2025-01-01 (hari pertama pipeline) 'loaded_at' ->
+    # 2026-08-13 s.d. 2026-09-04 (mayoritas riwayat, 16/19 partisi) 'ETL_InsertedAt' ->
+    # 2026-09-07 dst (skema TERKINI, 2/19 partisi sejauh ini) 'loaded_at' lagi. YAML ini
+    # mengikuti skema TERKINI ('loaded_at') -- partisi era 'ETL_InsertedAt' akan gagal
+    # Dimensi 1 kalau divalidasi, itu schema evolution asli yang harus tertangkap, wajar.
+    # (Dimensi 1 SCHEMA, 4 MISSINGNESS via 'wajib:', dan 8 CLEANLINESS/ENCODING otomatis aktif dari daftar ini, lihat header.)
+    kolom:
+      - {nama: SourceSystem,              tipe: string}   # 1 nilai unik, panjang 12-12
+      - {nama: PieRecordID,               tipe: string}   # 2213 nilai unik, panjang 6-7 (BUKAN unik per baris -- lihat kunci.bisnis)
+      - {nama: Plantation,                tipe: string}   # 4 nilai unik, panjang 4-8
+      - {nama: GroupingName,              tipe: string}   # 7 nilai unik, panjang 8-17
+      - {nama: CompanyCode,               tipe: string}   # 15 nilai unik, panjang 6-8
+      - {nama: EstCode,                   tipe: string}   # 42 nilai unik, panjang 3-4
+      - {nama: EstNewCode,                tipe: string}   # 42 nilai unik, panjang 3-5
+      - {nama: EstCodeSAP,                tipe: string}   # 42 nilai unik, panjang 4-4
+      - {nama: Division,                  tipe: string, wajib: false}   # null 1.6%; 6 nilai unik, panjang 5-5
+      - {nama: BlockMapping,              tipe: string}   # 2083 nilai unik, panjang 1-32
+      - {nama: PiezoTypeID,               tipe: integer}   # rentang data 1..2
+      - {nama: PiezoTypeLabel,            tipe: string}   # 2 nilai unik, panjang 6-6
+      - {nama: PiezoClassID,              tipe: integer}   # rentang data 1..3
+      - {nama: PiezoClassLabel,           tipe: string}   # 3 nilai unik, panjang 6-12
+      - {nama: Latitude,                  tipe: decimal}   # rentang data -2.83181..109.312
+      - {nama: Longitude,                 tipe: decimal}   # rentang data -0.2115..119.337
+      - {nama: JarakMeter,                tipe: decimal, wajib: false}   # null 81.0%; rentang data 0.31..4590.15
+      - {nama: DeviceIOTID,               tipe: string, wajib: false}   # null 97.1%; 60 nilai unik, panjang 3-9
+      - {nama: DeviceIOTName,             tipe: string, wajib: false}   # null 97.1%; 60 nilai unik, panjang 22-26
+      - {nama: Jenis,                     tipe: string}   # 4 nilai unik, panjang 12-14
+      - {nama: Status,                    tipe: string}   # 2 nilai unik, panjang 5-9
+      - {nama: WeekID,                    tipe: integer}   # rentang data 435..523
+      - {nama: WeekName,                  tipe: string}   # 6 nilai unik, panjang 7-7 -- 'referensi:
+        # true' SENGAJA TIDAK dipakai: satu partisi harian pasti cuma berisi 1 nilai WeekName
+        # (satu hari = satu minggu), jadi check "distinct value = 6 nilai master" (Dimensi 7,
+        # auto-aktif utk referensi: true berkardinalitas <=10 -- lihat checks.py check_distribution())
+        # PASTI selalu warning terlepas datanya benar atau tidak -- bukan sinyal berguna utk kolom ini.
+      - {nama: WeekYear,                  tipe: integer}   # rentang data 2025..2026
+      - {nama: WeekMonth,                 tipe: integer}   # rentang data 1..9
+      - {nama: WeekOfMonth,               tipe: integer}   # rentang data 1..4
+      - {nama: WeekStartDate,             tipe: datetime}
+      - {nama: WeekEndDate,               tipe: datetime}
+      - {nama: MeasurementID,             tipe: integer}   # 7514 nilai unik -- => kunci.surrogate
+      - {nama: Ketinggian,                tipe: decimal}   # rentang data 4..255
+      - {nama: Unit,                      tipe: string}   # 1 nilai unik, panjang 2-2
+      - {nama: Kondisi,                   tipe: string}   # 2 nilai unik, panjang 4-15
+      - {nama: MeasurementDate,           tipe: datetime}
+      - {nama: MeasurementDateOnly,       tipe: datetime}   # DIPERBAIKI 2026-09-09: sebelumnya
+        # tertulis 'string' (tebakan scaffold.py salah -- dtype pandas 'object' selalu diklaim
+        # 'string' oleh tipe_logis(), padahal isinya objek datetime.date asli, dikonfirmasi baca
+        # langsung beberapa partisi). BUKAN kode referensi (nilai baru selalu wajar muncul seiring
+        # waktu), jadi SENGAJA tidak diberi referensi: true walau scaffold.py menyarankannya.
+      - {nama: IndicatorID,               tipe: integer}   # rentang data 2..6
+      - {nama: IndicatorName,             tipe: string}   # 5 nilai unik, panjang 3-5
+      - {nama: IndicatorAlias,            tipe: string}   # 5 nilai unik, panjang 11-44
+      - {nama: IndicatorAliasReport,      tipe: string}   # 5 nilai unik, panjang 6-14
+      - {nama: IndicatorMinValue,         tipe: integer}   # rentang data 0..66
+      - {nama: IndicatorMaxValue,         tipe: integer}   # rentang data 40..998
+      - {nama: IndicatorStandardLoadedAt, tipe: datetime}
+      - {nama: UserID,                    tipe: integer}   # rentang data 1362..37063
+      - {nama: NamaUser,                  tipe: string}   # 104 nilai unik, panjang 4-25
+      - {nama: loaded_at,                 tipe: datetime}   # waktu load. Nama TERKINI (sejak
+        # partisi 2026-09-07) -- sebelumnya sempat 'ETL_InsertedAt' (2026-08-13 s.d. 2026-09-04,
+        # mayoritas riwayat). Lihat catatan skema evolution lengkap di atas.
+
+  # =========================================================================
+  # SILVER RS TRANSACTIONS -- data curah hujan manual (Rainfall Sensor),
+  # per stasiun per periode, digabung dgn hierarki master (plantation/
+  # estate/lokasi). DIKONFIRMASI user (2026-09-08): dataset inilah, bersama
+  # ARS, yang termasuk kelompok window custom 07:00->07:00 (bukan AWL).
+  # Partisi kalender HARIAN, 1 file/hari (BEDA dari ARS/AWL yang 2 file/hari).
+  # =========================================================================
+
+  silver_rs_transactions:
+    deskripsi: "Silver RS Transactions -- data curah hujan manual per stasiun per periode, digabung dgn master plantation/estate/lokasi."
+
+    sumber:
+      s3: "s3://${S3_BUCKET_NAME}/datalake/silver/rs/rs_transactions/" #s3://kpn-gis-s3-bucket/datalake/silver/rs/rs_transactions/
+      partisi: harian
+      # 'sql_server:' (=> DIMENSI 9 REKONSILIASI SUMBER) TIDAK ditambahkan -- konsisten dgn
+      # keputusan file ini yg dipersempit ke 6 dimensi PDF persis (lihat header atas).
+
+    # Dimensi 11 STORAGE SAFETY TIDAK diaktifkan -- konsisten dgn keputusan file ini (lihat header).
+
+    kunci:
+      # 'waktu'/'waktu_muat' (=> DIMENSI 3 FRESHNESS) TIDAK diaktifkan -- konsisten dgn header.
+      surrogate: silver_id   # => DIMENSI 5 UNIQUENESS -- DIVERIFIKASI 100% unik (824/824 baris,
+                              # 13 partisi). TIDAK ADA 'kunci.bisnis' komposit ditambahkan --
+                              # [station_id, period_date] TERNYATA BUKAN unik (cuma 638/824 unik,
+                              # 186 duplikat -- satu stasiun bisa lapor >1x utk periode yang sama).
+                              # kunci.surrogate sendirian sudah cukup mengaktifkan Dimensi 5.
+
+    # => DIMENSI 6 INTEGRITY (business logic consistency) -- DIVERIFIKASI 100% (bukan cuma
+    # sampel scaffold) thd seluruh 13 partisi, TAPI HANYA utk baris yg keduanya terisi (625/824
+    # baris -- sisanya null krn join opsional, lihat 'wajib: false' di kolom.start_date/end_date
+    # di bawah). 'period_date berada di antara start_date & end_date' SENGAJA TIDAK ditambahkan
+    # walau berkorelasi tinggi (98.08%) -- BUKAN 100%, beda dgn urutan_waktu di bawah yg memang
+    # 100% valid; memaksakan aturan yg cuma 98% benar sbg expectation blocking akan menghasilkan
+    # kegagalan berulang utk kasus yang sah.
+    urutan_waktu:
+      - [end_date, start_date]
+
+    # => DIMENSI 6 INTEGRITY (referential 1:1) -- SEMUA DIVERIFIKASI 100% konsisten thd seluruh
+    # 13 partisi.
+    #
+    # [est_new_code, est_code_sap] SENGAJA TIDAK dimasukkan walau 100% konsisten (diverifikasi
+    # manual) -- ExpectColumnPairValuesToBeInSet CRASH internal yang SAMA PERSIS dgn temuan di
+    # silver_pzo_tmat_measurement (pandas.errors.IndexingError: "Unalignable boolean Series
+    # provided as indexer"), dikonfirmasi 2026-09-09 dgn menjalankan expectation-nya langsung.
+    # Kolom station_id/station_id_sap/station_sap AMAN (0% null, tidak kena bug ini) --
+    # est_new_code/est_code_sap punya 24.2% null, cukup utk memicu bug yang sama.
+    relasi:
+      - [station_id, station_id_sap]
+      - [station_id, station_sap]
+      - [station_id_sap, station_sap]
+
+    # => DIMENSI 6 INTEGRITY (flag boolean konsisten dgn kondisi kolom lain) -- DIVERIFIKASI 100%
+    # thd seluruh 13 partisi: rain_day_flag=False SELALU berpasangan dgn rainfall_mm=0 persis,
+    # rain_day_flag=True SELALU berpasangan dgn rainfall_mm>0 (1.00..53.00). 'rentang' di kolom
+    # rainfall_mm di bawah HANYA dipakai utk pengecekan ini (ambang bawah 0.01 memisahkan "ada
+    # hujan" dari "0 mm tepat") -- TIDAK mengaktifkan Dimensi 7 DISTRIBUTION krn 'profil_distribusi'
+    # tidak diset (lihat dqcore/checks.py: 'rentang' cuma dipakai Dimensi 7 lewat kolom_profil,
+    # yang disaring dari 'profil_distribusi: true', bukan dari 'rentang' semata).
+    flag_dq:
+      - {flag: rain_day_flag, kolom: rainfall_mm, aturan: ada_dan_dalam_rentang}
+
+    # Dimensi 10 FORMAT & PATTERN COMPLIANCE: sama seperti dataset lain di file ini -- tidak ada
+    # standar format bisnis eksternal yang applicable saat ini, jadi 'regex:' belum ditambahkan.
+
+    # Kolom NYATA hasil baca LANGSUNG seluruh 13 partisi S3 sungguhan (2026-09-09, 824 baris
+    # gabungan) -- BUKAN sampel scaffold.py 10 partisi. 'wajib' & statistik dihitung dari histori
+    # PENUH yang tersedia saat ini. Kolom start_date/end_date/status/create_by/created_name/
+    # create_date/est_new_code/est_code_sap/location SEMUA null di baris yang SAMA (24.2%) --
+    # kemungkinan satu join master opsional yang gagal utk sebagian station_id, bukan 9 masalah
+    # independen. create_by/created_name/create_date HANYA punya SATU nilai non-null di seluruh
+    # riwayat (17601 / "Yogi Sugara" / 2024-12-31) -- terlihat seperti metadata "siapa yang
+    # membuat master" (statis), BUKAN timestamp/aktor per-baris yang genuinely bervariasi --
+    # SENGAJA TIDAK dipakai sbg kunci.waktu/waktu_muat walau namanya 'create_date'.
+    #
+    # SCHEMA EVOLUTION (pola SAMA PERSIS dgn silver_ars_transactions/silver_pzo_tmat_measurement):
+    # kolom audit berganti nama 2x: 2025-01-01 (hari pertama pipeline) 'loaded_at' ->
+    # 2026-08-26 s.d. 2026-09-07 (mayoritas riwayat, 11/13 partisi) 'etl_inserted_at' ->
+    # 2026-09-08 (skema TERKINI) 'loaded_at' lagi. YAML ini mengikuti skema TERKINI.
+    # (Dimensi 1 SCHEMA, 4 MISSINGNESS via 'wajib:', dan 8 CLEANLINESS/ENCODING otomatis aktif dari daftar ini, lihat header.)
+    kolom:
+      - {nama: silver_id,      tipe: integer}   # 824 nilai unik -- => kunci.surrogate
+      - {nama: station_id,     tipe: string}   # 58 nilai unik, panjang 1-2
+      - {nama: station_id_sap, tipe: string}   # 58 nilai unik, panjang 0-16
+      - {nama: station_sap,    tipe: string}   # 58 nilai unik, panjang 0-10
+      - {nama: start_date,     tipe: datetime, wajib: false}   # null 24.2%
+      - {nama: end_date,       tipe: datetime, wajib: false}   # null 24.2%
+      - {nama: status,         tipe: string, wajib: false}   # null 24.2%; 2 nilai
+        # unik -- referensi:true DI SINI MEMICU DIMENSI 7 (distinct-set, cardinality 2-10) --
+        # SAMA PERSIS isu terbuka yg dibahas utk silver_pzo_tmat_measurement, belum diputuskan.
+      - {nama: create_by,      tipe: float, wajib: false}   # null 24.2%; SATU nilai non-null
+        # (17601) di seluruh riwayat -- lihat catatan di atas.
+      - {nama: created_name,   tipe: string, wajib: false}   # null 24.2%; 1 nilai
+        # unik (aman dari Dimensi 7 -- butuh >1 nilai utk terpicu)
+      - {nama: create_date,    tipe: datetime, wajib: false}   # null 24.2%; SATU nilai non-null
+        # di seluruh riwayat -- lihat catatan di atas, BUKAN kolom waktu kejadian asli.
+      - {nama: plantation,     tipe: string}   # 5 nilai unik -- MEMICU DIMENSI 7
+        # (sama isu terbuka spt 'status' di atas).
+      - {nama: grouping,       tipe: string}   # 9 nilai unik -- MEMICU DIMENSI 7.
+      - {nama: company_code,   tipe: string}   # 24 nilai unik
+      - {nama: est_code,       tipe: string}   # 54 nilai unik
+      - {nama: est_new_code,   tipe: string, wajib: false}   # null 24.2%; 53 nilai unik
+      - {nama: est_code_sap,   tipe: string, wajib: false}   # null 24.2%; 53 nilai unik
+      - {nama: location,       tipe: string, wajib: false}   # null 24.2%; 5 nilai
+        # unik -- MEMICU DIMENSI 7 (sama isu terbuka spt 'status' di atas).
+      - {nama: period_date,    tipe: datetime}   # 13 nilai unik -- waktu kejadian ASLI (BUKAN
+        # create_date, lihat catatan di atas), tapi Dimensi 3 FRESHNESS tetap dimatikan sesuai
+        # kebijakan file ini.
+      - {nama: rain_day_flag,  tipe: boolean}   # => DIMENSI 6 (flag_dq, lihat di atas)
+      - {nama: rainfall_mm,    tipe: decimal, rentang: [0.01, 1000]}   # rentang data asli 0..53;
+        # 'rentang' di sini HANYA dipakai flag_dq (lihat catatan flag_dq di atas), BUKAN utk
+        # Dimensi 7 (profil_distribusi tidak diset).
+      - {nama: loaded_at,      tipe: datetime}   # waktu load. Nama TERKINI (sejak partisi
+        # 2026-09-08) -- sebelumnya sempat 'etl_inserted_at' (2026-08-26 s.d. 2026-09-07,
+        # mayoritas riwayat). Pola skema evolution sama dgn dataset lain di file ini.
+
+
+  # =========================================================================
+  # SILVER WLR TMAS MEASUREMENT
+  # Pengukuran Tinggi Muka Air Sumur (TMAS).
+  # Partisi kalender harian (recorded_year/month/day).
+  # =========================================================================
+
+
+  # =========================================================================
+  # SILVER WLR TMAS MEASUREMENT
+  # =========================================================================
+
+  silver_wlr_tmas_measurement:
+    deskripsi: "Silver WLR TMAS Measurement -- data pengukuran tinggi muka air sumur, digabung dengan master station dan estate."
+
+    sumber:
+      s3: "s3://${S3_BUCKET_NAME}/datalake/silver/wlr/tmas_measurement/"
+      partisi: harian
+
+    # DIMENSI 5 UNIQUENESS
+    kunci:
+      surrogate: MeasurementID
+
+    # DIMENSI 6 INTEGRITY
+    # Aktifkan setelah urutan tanggal diverifikasi.
+    # urutan_waktu:
+    #   - [InputDate, MeasurementDate]
+
+    kolom:
+      - {nama: MeasurementID,         tipe: integer}
+      - {nama: StationID,             tipe: string}
+      - {nama: StationName,           tipe: string}
+      - {nama: StationTypeID,         tipe: integer}
+      - {nama: StationTypeLabel,      tipe: string}
+      - {nama: ZonaID,                tipe: string, wajib: false}
+      - {nama: ZonaName,              tipe: string, wajib: false}
+      - {nama: Plantation,            tipe: string}
+      - {nama: GroupingName,          tipe: string}
+      - {nama: CompanyCode,           tipe: string}
+      - {nama: EstCode,               tipe: string}
+      - {nama: EstNewCode,            tipe: string, wajib: false}
+      - {nama: EstCodeSAP,            tipe: string, wajib: false}
+      - {nama: Latitude,              tipe: decimal, wajib: false}
+      - {nama: Longitude,             tipe: decimal, wajib: false}
+      - {nama: Accuracy,              tipe: decimal, wajib: false}
+      - {nama: ElevasiTanah,          tipe: decimal, wajib: false}
+      - {nama: Frequency,             tipe: integer}
+      - {nama: Status,                tipe: string}
+      - {nama: MeasurementDate,       tipe: datetime}
+      - {nama: MeasurementDateOnly,   tipe: datetime}
+      - {nama: InputDate,             tipe: datetime, wajib: false}
+      - {nama: StationRegisteredDate, tipe: datetime, wajib: false}
+      - {nama: Ketinggian,            tipe: decimal}
+      - {nama: Unit,                  tipe: string}
+      - {nama: TargetWL,              tipe: float, wajib: false}
+      - {nama: TargetWLHistoryID,     tipe: float, wajib: false}
+      - {nama: UserID,                tipe: integer, wajib: false}
+      - {nama: NamaUser,              tipe: string, wajib: false}
+      - {nama: RawMeasurementJSON,    tipe: string, wajib: false}
+      - {nama: loaded_at,             tipe: datetime}

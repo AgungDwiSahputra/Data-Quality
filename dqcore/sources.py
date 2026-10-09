@@ -72,20 +72,109 @@ def _parse_s3(uri: str) -> tuple[str, str]:
 
 
 def _tanggal_dari_nama(teks: str) -> datetime | None:
-    """Ambil tanggal dari 'gold_ars_readings_20260221.parquet' atau path partisi Hive."""
-    m = re.search(r"recorded_year=(\d{4})/recorded_month=(\d{2})/recorded_day=(\d{2})",
-                  teks.replace("\\", "/"))
+    """
+    Ambil tanggal representatif dari nama file/path partisi.
+
+    Harian:
+        recorded_year=2026/recorded_month=10/recorded_day=06
+        -> 2026-10-06
+
+    Mingguan:
+        recorded_year=2026/recorded_month=10/recorded_week=01
+        -> 2026-10-01
+
+        recorded_week dianggap week-of-month:
+            01 = tanggal 1-7
+            02 = tanggal 8-14
+            03 = tanggal 15-21
+            04 = tanggal 22-28
+            05 = tanggal 29-akhir bulan
+
+    Snapshot:
+        snapshot_date=2026-10-06
+        -> 2026-10-06
+    """
+
+    normalized = teks.replace("\\", "/")
+
+    # ---------------------------------------------------------
+    # 1. Partisi harian
+    # ---------------------------------------------------------
+    m = re.search(
+        r"recorded_year=(\d{4})/"
+        r"recorded_month=(\d{2})/"
+        r"recorded_day=(\d{1,2})",
+        normalized,
+    )
+
     if m:
-        return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)))
-    m = re.search(r"snapshot_date=(\d{4})-(\d{2})-(\d{2})", teks.replace("\\", "/"))
+        return datetime(
+            int(m.group(1)),
+            int(m.group(2)),
+            int(m.group(3)),
+        )
+
+    # ---------------------------------------------------------
+    # 2. Partisi mingguan / week-of-month
+    #    support:
+    #       recorded_week=01
+    #       recorded_week=1
+    #       recorded_week=W1
+    #       recorded_week=W01
+    # ---------------------------------------------------------
+    m = re.search(
+        r"recorded_year=(\d{4})/"
+        r"recorded_month=(\d{2})/"
+        r"recorded_week=W?(\d{1,2})",
+        normalized,
+        flags=re.IGNORECASE,
+    )
+
     if m:
-        return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        year = int(m.group(1))
+        month = int(m.group(2))
+        week = int(m.group(3))
+
+        if week < 1 or week > 5:
+            return None
+
+        # week 01 -> tanggal 1
+        # week 02 -> tanggal 8
+        # week 03 -> tanggal 15
+        # dst.
+        first_day = 1 + ((week - 1) * 7)
+
+        try:
+            return datetime(year, month, first_day)
+        except ValueError:
+            return None
+
+    # ---------------------------------------------------------
+    # 3. Snapshot
+    # ---------------------------------------------------------
+    m = re.search(
+        r"snapshot_date=(\d{4})-(\d{2})-(\d{2})",
+        normalized,
+    )
+
+    if m:
+        return datetime(
+            int(m.group(1)),
+            int(m.group(2)),
+            int(m.group(3)),
+        )
+
+    # ---------------------------------------------------------
+    # 4. Filename YYYYMMDD
+    # ---------------------------------------------------------
     m = re.search(r"(\d{8})", os.path.basename(teks))
+
     if m:
         try:
             return datetime.strptime(m.group(1), "%Y%m%d")
         except ValueError:
             return None
+
     return None
 
 
@@ -219,29 +308,119 @@ def daftar_partisi(spec, sumber: str) -> list[Partisi]:
     return hasil
 
 
-def pilih_partisi(partisi: list[Partisi], tanggal: str | None,
-                  berkas: str | None) -> Partisi:
-    """Pilih satu partisi: berdasarkan --file, --date, atau yang terbaru."""
+def pilih_partisi(
+    partisi: list[Partisi],
+    tanggal: str | None,
+    berkas: str | None,
+    tipe_partisi: str | None = None,
+) -> Partisi:
+    """
+    Pilih satu partisi berdasarkan:
+      - --file
+      - --date
+      - atau partisi terbaru
+
+    Mendukung:
+      harian   -> exact date
+      snapshot -> exact date
+      mingguan -> date dipetakan ke week-of-month
+    """
+
+    # =========================================================
+    # 1. Pilih berdasarkan file
+    # =========================================================
     if berkas:
         for p in partisi:
-            if p.uri == berkas or p.label == berkas or os.path.basename(p.uri) == berkas:
+            if (
+                p.uri == berkas
+                or p.label == berkas
+                or os.path.basename(p.uri) == berkas
+            ):
                 return p
-        # boleh juga path yang tidak terdaftar (mis. file di luar folder biasa)
+
+        # Boleh path lokal yang tidak terdaftar
         if os.path.exists(berkas):
-            return Partisi(uri=berkas, label=os.path.basename(berkas),
-                           tanggal=_tanggal_dari_nama(berkas), sumber="lokal",
-                           ukuran_bytes=os.path.getsize(berkas))
-        raise SourceError(f"Partisi {berkas!r} tidak ditemukan di antara "
-                          f"{len(partisi)} partisi yang tersedia.")
+            return Partisi(
+                uri=berkas,
+                label=os.path.basename(berkas),
+                tanggal=_tanggal_dari_nama(berkas),
+                sumber="lokal",
+                ukuran_bytes=os.path.getsize(berkas),
+            )
+
+        raise SourceError(
+            f"Partisi {berkas!r} tidak ditemukan di antara "
+            f"{len(partisi)} partisi yang tersedia."
+        )
+
+    # =========================================================
+    # 2. Pilih berdasarkan tanggal
+    # =========================================================
     if tanggal:
         target = datetime.strptime(tanggal, "%Y-%m-%d")
-        cocok = [p for p in partisi if p.tanggal and p.tanggal.date() == target.date()]
+
+        tipe = str(tipe_partisi or "").lower()
+
+        # -----------------------------------------------------
+        # WEEKLY
+        # -----------------------------------------------------
+        if tipe in ("mingguan", "weekly", "week"):
+
+            week_of_month = ((target.day - 1) // 7) + 1
+
+            representative_date = datetime(
+                target.year,
+                target.month,
+                1 + ((week_of_month - 1) * 7),
+            )
+
+            cocok = [
+                p
+                for p in partisi
+                if p.tanggal
+                and p.tanggal.date() == representative_date.date()
+            ]
+
+            if not cocok:
+                raise SourceError(
+                    f"Tidak ada partisi mingguan untuk tanggal {tanggal}.\n"
+                    f"Target weekly: "
+                    f"recorded_year={target.year}/"
+                    f"recorded_month={target.month:02d}/"
+                    f"recorded_week={week_of_month:02d}"
+                )
+
+            return cocok[-1]
+
+        # -----------------------------------------------------
+        # DAILY / SNAPSHOT
+        # -----------------------------------------------------
+        cocok = [
+            p
+            for p in partisi
+            if p.tanggal
+            and p.tanggal.date() == target.date()
+        ]
+
         if not cocok:
-            tersedia = [p.tanggal.strftime("%Y-%m-%d") for p in partisi if p.tanggal]
+            tersedia = [
+                p.tanggal.strftime("%Y-%m-%d")
+                for p in partisi
+                if p.tanggal
+            ]
+
             raise SourceError(
                 f"Tidak ada partisi untuk tanggal {tanggal}.\n"
-                f"Rentang yang tersedia: {min(tersedia, default='-')} .. {max(tersedia, default='-')}")
+                f"Rentang yang tersedia: "
+                f"{min(tersedia, default='-')} .. "
+                f"{max(tersedia, default='-')}"
+            )
+
         return cocok[-1]
+
+    # =========================================================
+    # 3. Tidak ada --date -> terbaru
+    # =========================================================
     return partisi[-1]
 
 
