@@ -22,7 +22,7 @@ import glob
 import io
 import os
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 import pandas as pd
@@ -30,12 +30,25 @@ import pandas as pd
 
 @dataclass
 class Partisi:
-    """Satu unit data yang bisa divalidasi: satu file lokal atau satu objek S3."""
-    uri: str                       # path lokal atau s3://...
+    """
+    Satu partisi LOGIS (satu hari/minggu/snapshot) yang bisa divalidasi.
+
+    Fisiknya bisa terdiri dari LEBIH DARI SATU file .parquet di bawah folder
+    partisi yang sama -- writer terdistribusi (mis. Spark) lazim menulis
+    part-00000, part-00001, dst per partisi, bukan satu file tunggal.
+    Ditemukan 2026-09-08: silver_ars_transactions SELALU 2 file/hari (57/57
+    hari historis), silver_awl_transactions 3/15 hari. Tanpa penggabungan
+    ini, baca_parquet() cuma membaca SATU file (yang terakhir menurut urutan
+    nama), sehingga baris/ukuran/rekonsiliasi yang dihitung cuma sebagian
+    dari partisi sungguhan -- bukan data hilang di pipeline, tapi validator
+    yang salah menghitung.
+    """
+    uri: str                       # uri file PERTAMA -- representatif utk tampilan/pencocokan --file
     label: str                     # nama pendek untuk laporan
     tanggal: datetime | None       # tanggal partisi, None kalau tidak bisa ditentukan
     sumber: str                    # "lokal" | "s3"
-    ukuran_bytes: int | None = None  # ukuran berkas, dipakai dimensi 11 (COST & STORAGE SAFETY)
+    ukuran_bytes: int | None = None  # TOTAL ukuran SEMUA file dalam partisi ini (dimensi 11)
+    berkas: list[str] = field(default_factory=list)  # SEMUA uri fisik; baca_parquet() gabung semuanya
 
     @property
     def is_s3(self) -> bool:
@@ -59,20 +72,109 @@ def _parse_s3(uri: str) -> tuple[str, str]:
 
 
 def _tanggal_dari_nama(teks: str) -> datetime | None:
-    """Ambil tanggal dari 'gold_ars_readings_20260221.parquet' atau path partisi Hive."""
-    m = re.search(r"recorded_year=(\d{4})/recorded_month=(\d{2})/recorded_day=(\d{2})",
-                  teks.replace("\\", "/"))
+    """
+    Ambil tanggal representatif dari nama file/path partisi.
+
+    Harian:
+        recorded_year=2026/recorded_month=10/recorded_day=06
+        -> 2026-10-06
+
+    Mingguan:
+        recorded_year=2026/recorded_month=10/recorded_week=01
+        -> 2026-10-01
+
+        recorded_week dianggap week-of-month:
+            01 = tanggal 1-7
+            02 = tanggal 8-14
+            03 = tanggal 15-21
+            04 = tanggal 22-28
+            05 = tanggal 29-akhir bulan
+
+    Snapshot:
+        snapshot_date=2026-10-06
+        -> 2026-10-06
+    """
+
+    normalized = teks.replace("\\", "/")
+
+    # ---------------------------------------------------------
+    # 1. Partisi harian
+    # ---------------------------------------------------------
+    m = re.search(
+        r"recorded_year=(\d{4})/"
+        r"recorded_month=(\d{2})/"
+        r"recorded_day=(\d{1,2})",
+        normalized,
+    )
+
     if m:
-        return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)))
-    m = re.search(r"snapshot_date=(\d{4})-(\d{2})-(\d{2})", teks.replace("\\", "/"))
+        return datetime(
+            int(m.group(1)),
+            int(m.group(2)),
+            int(m.group(3)),
+        )
+
+    # ---------------------------------------------------------
+    # 2. Partisi mingguan / week-of-month
+    #    support:
+    #       recorded_week=01
+    #       recorded_week=1
+    #       recorded_week=W1
+    #       recorded_week=W01
+    # ---------------------------------------------------------
+    m = re.search(
+        r"recorded_year=(\d{4})/"
+        r"recorded_month=(\d{2})/"
+        r"recorded_week=W?(\d{1,2})",
+        normalized,
+        flags=re.IGNORECASE,
+    )
+
     if m:
-        return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        year = int(m.group(1))
+        month = int(m.group(2))
+        week = int(m.group(3))
+
+        if week < 1 or week > 5:
+            return None
+
+        # week 01 -> tanggal 1
+        # week 02 -> tanggal 8
+        # week 03 -> tanggal 15
+        # dst.
+        first_day = 1 + ((week - 1) * 7)
+
+        try:
+            return datetime(year, month, first_day)
+        except ValueError:
+            return None
+
+    # ---------------------------------------------------------
+    # 3. Snapshot
+    # ---------------------------------------------------------
+    m = re.search(
+        r"snapshot_date=(\d{4})-(\d{2})-(\d{2})",
+        normalized,
+    )
+
+    if m:
+        return datetime(
+            int(m.group(1)),
+            int(m.group(2)),
+            int(m.group(3)),
+        )
+
+    # ---------------------------------------------------------
+    # 4. Filename YYYYMMDD
+    # ---------------------------------------------------------
     m = re.search(r"(\d{8})", os.path.basename(teks))
+
     if m:
         try:
             return datetime.strptime(m.group(1), "%Y%m%d")
         except ValueError:
             return None
+
     return None
 
 
@@ -104,10 +206,49 @@ def _client():
 # Penemuan partisi
 # ---------------------------------------------------------------------------
 
+def _gabung_partisi_sehari(entri: list[Partisi]) -> list[Partisi]:
+    """
+    Gabungkan entri file yang berbagi tanggal partisi yang sama menjadi SATU
+    Partisi logis (lihat docstring class Partisi). Entri tanpa tanggal
+    terbaca (None) TIDAK digabung sama sekali -- masing-masing tetap jadi
+    Partisi sendiri seperti sebelumnya, supaya dataset 'tanpa_partisi'
+    (semua file bertanggal None) tidak keliru dianggap satu partisi raksasa.
+    """
+    kelompok: dict[object, list[Partisi]] = {}
+    urutan: list[object] = []
+    for p in entri:
+        kunci = p.tanggal.date() if p.tanggal else id(p)
+        if kunci not in kelompok:
+            kelompok[kunci] = []
+            urutan.append(kunci)
+        kelompok[kunci].append(p)
+
+    hasil = []
+    for kunci in urutan:
+        anggota = sorted(kelompok[kunci], key=lambda p: p.uri)
+        if len(anggota) == 1:
+            hasil.append(anggota[0])
+            continue
+        utama = anggota[0]
+        total_ukuran = sum(a.ukuran_bytes or 0 for a in anggota)
+        label_folder = os.path.dirname(utama.label) or utama.label
+        hasil.append(Partisi(
+            uri=utama.uri,
+            label=f"{label_folder} ({len(anggota)} file)",
+            tanggal=utama.tanggal,
+            sumber=utama.sumber,
+            ukuran_bytes=total_ukuran,
+            berkas=[a.uri for a in anggota],
+        ))
+    return hasil
+
+
 def daftar_partisi(spec, sumber: str) -> list[Partisi]:
     """
     Kembalikan seluruh partisi yang tersedia untuk sebuah dataset, terurut
-    dari yang paling lama ke paling baru.
+    dari yang paling lama ke paling baru. Beberapa file fisik di bawah
+    tanggal partisi yang sama otomatis digabung jadi satu Partisi logis
+    (lihat _gabung_partisi_sehari()).
     """
     if sumber == "lokal":
         if not spec.lokal:
@@ -120,9 +261,12 @@ def daftar_partisi(spec, sumber: str) -> list[Partisi]:
             raise SourceError(
                 f"Tidak ada file yang cocok dengan pola:\n  {spec.lokal}\n"
                 f"Periksa kembali 'sumber.lokal' untuk dataset {spec.nama!r} di datasets.yml.")
-        return [Partisi(uri=b, label=os.path.basename(b),
-                        tanggal=_tanggal_dari_nama(b), sumber="lokal",
-                        ukuran_bytes=os.path.getsize(b)) for b in berkas]
+        mentah = [Partisi(uri=b, label=os.path.basename(b),
+                          tanggal=_tanggal_dari_nama(b), sumber="lokal",
+                          ukuran_bytes=os.path.getsize(b)) for b in berkas]
+        hasil = _gabung_partisi_sehari(mentah)
+        hasil.sort(key=lambda p: (p.tanggal or datetime.min, p.label))
+        return hasil
 
     if not spec.s3:
         raise SourceError(
@@ -142,7 +286,7 @@ def daftar_partisi(spec, sumber: str) -> list[Partisi]:
 
     bucket, prefix = _parse_s3(spec.s3)
     s3 = _client()
-    hasil = []
+    mentah = []
     paginator = s3.get_paginator("list_objects_v2")
     for halaman in paginator.paginate(Bucket=bucket, Prefix=prefix + "/"):
         for obj in halaman.get("Contents", []):
@@ -152,40 +296,131 @@ def daftar_partisi(spec, sumber: str) -> list[Partisi]:
             uri = f"s3://{bucket}/{kunci}"
             # Label = bagian partisi saja, supaya laporan tidak kepanjangan.
             label = kunci[len(prefix):].strip("/") or os.path.basename(kunci)
-            hasil.append(Partisi(uri=uri, label=label,
-                                 tanggal=_tanggal_dari_nama(kunci), sumber="s3",
-                                 ukuran_bytes=obj.get("Size")))
-    if not hasil:
+            mentah.append(Partisi(uri=uri, label=label,
+                                  tanggal=_tanggal_dari_nama(kunci), sumber="s3",
+                                  ukuran_bytes=obj.get("Size")))
+    if not mentah:
         raise SourceError(
             f"Tidak ada objek .parquet di bawah {spec.s3!r}.\n"
             f"Periksa nama bucket, prefix, dan apakah exporter Fase 1 sudah mengunggah.")
+    hasil = _gabung_partisi_sehari(mentah)
     hasil.sort(key=lambda p: (p.tanggal or datetime.min, p.label))
     return hasil
 
 
-def pilih_partisi(partisi: list[Partisi], tanggal: str | None,
-                  berkas: str | None) -> Partisi:
-    """Pilih satu partisi: berdasarkan --file, --date, atau yang terbaru."""
+def pilih_partisi(
+    partisi: list[Partisi],
+    tanggal: str | None,
+    berkas: str | None,
+    tipe_partisi: str | None = None,
+) -> Partisi:
+    """
+    Pilih satu partisi berdasarkan:
+      - --file
+      - --date
+      - atau partisi terbaru
+
+    Mendukung:
+      harian   -> exact date
+      snapshot -> exact date
+      mingguan -> date dipetakan ke week-of-month
+    """
+
+    # =========================================================
+    # 1. Pilih berdasarkan file
+    # =========================================================
     if berkas:
         for p in partisi:
-            if p.uri == berkas or p.label == berkas or os.path.basename(p.uri) == berkas:
+            if (
+                p.uri == berkas
+                or p.label == berkas
+                or os.path.basename(p.uri) == berkas
+            ):
                 return p
-        # boleh juga path yang tidak terdaftar (mis. file di luar folder biasa)
+
+        # Boleh path lokal yang tidak terdaftar
         if os.path.exists(berkas):
-            return Partisi(uri=berkas, label=os.path.basename(berkas),
-                           tanggal=_tanggal_dari_nama(berkas), sumber="lokal",
-                           ukuran_bytes=os.path.getsize(berkas))
-        raise SourceError(f"Partisi {berkas!r} tidak ditemukan di antara "
-                          f"{len(partisi)} partisi yang tersedia.")
+            return Partisi(
+                uri=berkas,
+                label=os.path.basename(berkas),
+                tanggal=_tanggal_dari_nama(berkas),
+                sumber="lokal",
+                ukuran_bytes=os.path.getsize(berkas),
+            )
+
+        raise SourceError(
+            f"Partisi {berkas!r} tidak ditemukan di antara "
+            f"{len(partisi)} partisi yang tersedia."
+        )
+
+    # =========================================================
+    # 2. Pilih berdasarkan tanggal
+    # =========================================================
     if tanggal:
         target = datetime.strptime(tanggal, "%Y-%m-%d")
-        cocok = [p for p in partisi if p.tanggal and p.tanggal.date() == target.date()]
+
+        tipe = str(tipe_partisi or "").lower()
+
+        # -----------------------------------------------------
+        # WEEKLY
+        # -----------------------------------------------------
+        if tipe in ("mingguan", "weekly", "week"):
+
+            week_of_month = ((target.day - 1) // 7) + 1
+
+            representative_date = datetime(
+                target.year,
+                target.month,
+                1 + ((week_of_month - 1) * 7),
+            )
+
+            cocok = [
+                p
+                for p in partisi
+                if p.tanggal
+                and p.tanggal.date() == representative_date.date()
+            ]
+
+            if not cocok:
+                raise SourceError(
+                    f"Tidak ada partisi mingguan untuk tanggal {tanggal}.\n"
+                    f"Target weekly: "
+                    f"recorded_year={target.year}/"
+                    f"recorded_month={target.month:02d}/"
+                    f"recorded_week={week_of_month:02d}"
+                )
+
+            return cocok[-1]
+
+        # -----------------------------------------------------
+        # DAILY / SNAPSHOT
+        # -----------------------------------------------------
+        cocok = [
+            p
+            for p in partisi
+            if p.tanggal
+            and p.tanggal.date() == target.date()
+        ]
+
         if not cocok:
-            tersedia = [p.tanggal.strftime("%Y-%m-%d") for p in partisi if p.tanggal]
+            tersedia = [
+                p.tanggal.strftime("%Y-%m-%d")
+                for p in partisi
+                if p.tanggal
+            ]
+
             raise SourceError(
                 f"Tidak ada partisi untuk tanggal {tanggal}.\n"
-                f"Rentang yang tersedia: {min(tersedia, default='-')} .. {max(tersedia, default='-')}")
+                f"Rentang yang tersedia: "
+                f"{min(tersedia, default='-')} .. "
+                f"{max(tersedia, default='-')}"
+            )
+
         return cocok[-1]
+
+    # =========================================================
+    # 3. Tidak ada --date -> terbaru
+    # =========================================================
     return partisi[-1]
 
 
@@ -194,12 +429,23 @@ def pilih_partisi(partisi: list[Partisi], tanggal: str | None,
 # ---------------------------------------------------------------------------
 
 def baca_parquet(p: Partisi) -> pd.DataFrame:
-    """Baca satu partisi menjadi DataFrame, lokal maupun S3."""
-    if not p.is_s3:
-        return pd.read_parquet(p.uri)
-    bucket, kunci = _parse_s3(p.uri)
-    obj = _client().get_object(Bucket=bucket, Key=kunci)
-    return pd.read_parquet(io.BytesIO(obj["Body"].read()))
+    """
+    Baca satu partisi LOGIS menjadi DataFrame, lokal maupun S3 -- kalau
+    partisi ini terdiri dari beberapa file fisik (p.berkas), semuanya dibaca
+    dan digabung (pd.concat), bukan cuma satu file representatif.
+    """
+    uris = p.berkas or [p.uri]
+
+    def _satu(uri: str) -> pd.DataFrame:
+        if not p.is_s3:
+            return pd.read_parquet(uri)
+        bucket, kunci = _parse_s3(uri)
+        obj = _client().get_object(Bucket=bucket, Key=kunci)
+        return pd.read_parquet(io.BytesIO(obj["Body"].read()))
+
+    if len(uris) == 1:
+        return _satu(uris[0])
+    return pd.concat([_satu(u) for u in uris], ignore_index=True)
 
 
 def ringkas_sumber(spec, sumber: str) -> str:

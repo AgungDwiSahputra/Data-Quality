@@ -65,22 +65,40 @@ import os
 import sys
 from datetime import datetime
 
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
-
 from dqcore import checks, docs as docs_mod, report
+from dqcore import spec
 from dqcore.sources import (SourceError, baca_parquet, daftar_partisi,
                             pilih_partisi, ringkas_sumber)
 from dqcore.spec import SpecError, load_datasets
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+
+# Load .env dari folder yang sama dengan validate.py (bukan CWD),
+# supaya tetap ketemu walau dijalankan dari folder lain / Task Scheduler.l
+try:
+    from dotenv import load_dotenv
+    _env_path = os.path.join(HERE, ".env")
+    if os.path.exists(_env_path):
+        load_dotenv(_env_path, override=False)
+    else:
+        load_dotenv()
+except ImportError:
+    pass
 DEFAULT_YAML = os.path.join(HERE, "datasets.yml")
 PROFIL_DIR = os.path.join(HERE, "profiles")
 REPORT_DIR = os.path.join(HERE, "reports")
 
+# ============================================================================
+# Logging ringan — hanya untuk narasi proses.
+# Log panjang/terstruktur ada di scheduler/run_validation.py.
+# ============================================================================
+_VERBOSE = os.environ.get("DQ_VERBOSE_LOG", "").lower() in ("1", "true", "yes")
+
+
+def _log(msg: str):
+    """Log narasi proses. Prefix [validate] agar mudah di-filter di log gabungan."""
+    if _VERBOSE:
+        print(f"[validate] {msg}", flush=True)
 
 def muat_profil(dataset: str) -> dict:
     path = os.path.join(PROFIL_DIR, f"{dataset}.json")
@@ -109,6 +127,65 @@ def _meta_dasar(spec, partisi, mode, now, rows=0, cols=0):
     }
 
 
+def pilih_partisi_sesuai_granularitas(spec, partisi, tanggal, file=None):
+    """
+    Pilih partisi berdasarkan granularitas dataset.
+
+    daily/snapshot:
+        tetap gunakan pilih_partisi() biasa.
+
+    weekly:
+        tanggal YYYY-MM-DD dipetakan ke partisi weekly
+        berdasarkan year/month/week yang sesuai.
+    """
+    if file:
+        return pilih_partisi(partisi, None, file)
+
+    if not tanggal:
+        return pilih_partisi(partisi, None, None)
+
+    tipe_partisi = str(spec.partisi or "").lower()
+
+    # Dataset non-weekly tetap pakai logic lama
+    if tipe_partisi not in ("weekly", "mingguan", "week"):
+        return pilih_partisi(partisi, tanggal, None)
+
+    target = datetime.strptime(tanggal, "%Y-%m-%d").date()
+
+    # Week-of-month:
+    # tanggal 1-7  = week 01
+    # tanggal 8-14 = week 02
+    # tanggal 15-21 = week 03
+    # dst.
+    week_of_month = ((target.day - 1) // 7) + 1
+
+    year_token = f"recorded_year={target.year}"
+    month_token = f"recorded_month={target.month:02d}"
+    week_token = f"recorded_week={week_of_month:02d}"
+
+    kandidat = []
+
+    for p in partisi:
+        uri = str(p.uri)
+
+        if (
+            year_token in uri
+            and month_token in uri
+            and week_token in uri
+        ):
+            kandidat.append(p)
+
+    if not kandidat:
+        raise SourceError(
+            f"Partisi weekly untuk tanggal {tanggal} tidak ditemukan "
+            f"({year_token}/{month_token}/{week_token})"
+        )
+
+    # Kalau ada beberapa file dalam partisi yang sama,
+    # ambil partisi pertama hasil discovery.
+    return kandidat[0]
+
+
 def validasi_partisi(spec, prof, partisi, mode, now, reconcile=True):
     # Berkas yang GAGAL TOTAL diparse (0 byte, korup, terpotong) membuat
     # baca_parquet() melempar exception SEBELUM sempat sampai ke satu pun
@@ -121,6 +198,9 @@ def validasi_partisi(spec, prof, partisi, mode, now, reconcile=True):
     try:
         df_raw = baca_parquet(partisi)
     except Exception as exc:                                       # noqa: BLE001
+        # --- TAMBAHKAN INI ---
+        _log(f"dataset={spec.nama}  GAGAL baca parquet  "
+             f"{type(exc).__name__}: {exc}")
         hasil = [{
             "category": "11. COST & STORAGE SAFETY",
             "description": "Berkas bisa dibaca sebagai Parquet (tidak kosong/korup)",
@@ -146,6 +226,10 @@ def validasi_partisi(spec, prof, partisi, mode, now, reconcile=True):
 def jalankan_dataset(spec, args, now) -> int:
     prof = muat_profil(spec.nama)
     partisi = daftar_partisi(spec, args.source)
+
+    # --- TAMBAHKAN INI ---
+    _log(f"dataset={spec.nama}  sumber={args.source}  mode={args.mode}  "
+         f"partisi_tersedia={len(partisi)}")
 
     # ---------------- sweep: ringkas seluruh partisi ----------------
     if args.sweep:
@@ -192,7 +276,32 @@ def jalankan_dataset(spec, args, now) -> int:
         return 1 if buruk else 0
 
     # ---------------- satu partisi: laporan lengkap ----------------
-    p = pilih_partisi(partisi, args.date, args.file)
+    try:
+        p = pilih_partisi_sesuai_granularitas(
+            spec,
+            partisi,
+            args.date,
+            args.file,
+        )
+    except Exception as exc:
+        tipe_partisi = str(spec.partisi or "").lower()
+        
+        if tipe_partisi in ("weekly", "mingguan", "week"):
+            raise SourceError(
+                f"Partisi weekly untuk {args.date} tidak ditemukan. "
+                f"Tidak melakukan fallback ke partisi global terbaru."
+            ) from exc
+
+        if args.fallback_latest and args.date:
+            print(
+                f"  [fallback] partisi '{args.date}' tidak ditemukan "
+                f"({type(exc).__name__}), pakai partisi terbaru"
+            )
+            p = pilih_partisi(partisi, None, None)
+
+        else:
+            raise
+
     print(f"Memuat [{p.sumber}]: {p.uri}")
     hasil, summ, meta, df_raw, df_work = validasi_partisi(spec, prof, p, args.mode, now,
                                                            reconcile=not args.no_reconcile)
@@ -223,7 +332,12 @@ def jalankan_dataset(spec, args, now) -> int:
         except Exception as exc:                                   # noqa: BLE001
             print(f"  GAGAL membangun Data Docs: {type(exc).__name__}: {exc}")
             print("  (laporan Markdown & JSON di atas tetap lengkap)")
-
+     # --- TAMBAHKAN INI ---
+    t = summ["total"]
+    _log(f"dataset={spec.nama}  selesai  rows={meta['rows']}  cols={meta['cols']}  "
+         f"pass={t['pass']}  fail={t['fail']}  blocking={t['fail_blocking']}  "
+         f"warning={t['fail_warning']}")
+    
     return 1 if summ["total"]["fail_blocking"] else 0
 
 
@@ -238,6 +352,10 @@ def main():
                     help="baca dari file lokal atau langsung dari S3")
     ap.add_argument("--date", help="pilih partisi berdasarkan tanggal (YYYY-MM-DD)")
     ap.add_argument("--file", help="pilih partisi berdasarkan nama/label persis")
+    ap.add_argument("--fallback-latest", action="store_true",
+                    help="kalau --date tidak ketemu, fallback ke partisi terbaru "
+                         "(bukan error). Untuk dataset snapshot/master yang tidak "
+                         "punya partisi harian.")
     ap.add_argument("--mode", choices=["harian", "backfill"], default="backfill",
                     help="menentukan SLA lag ingest yang dipakai")
     ap.add_argument("--sweep", action="store_true",
@@ -303,7 +421,13 @@ def main():
         try:
             kode |= jalankan_dataset(specs[nama], args, now)
         except SourceError as exc:
+            _log(f"dataset={nama}  SourceError: {exc}")
             print(f"GAGAL membaca sumber dataset {nama!r}:\n  {exc}")
+            kode = 1
+        except Exception as exc:                                     # ← BARU
+            _log(f"dataset={nama}  UNEXPECTED ERROR: {type(exc).__name__}: {exc}")
+            import traceback
+            traceback.print_exc()
             kode = 1
     return kode
 

@@ -1,0 +1,49 @@
+<!doctype html>
+<html><body style="font-family:Segoe UI,Arial,sans-serif;font-size:14px;color:#222">
+  <h2 style="margin:0 0 8px">{{ verdict }} — Validasi {{ result.dataset }}</h2>
+  <table cellpadding="6" cellspacing="0" border="0" style="border-collapse:collapse">
+    <tr><td><b>Job ID</b></td><td>{{ result.job_id }}</td></tr>
+    <tr><td><b>Config</b></td><td>{{ result.config }}</td></tr>
+    <tr><td><b>Source</b></td><td>{{ result.source }}</td></tr>
+    <tr><td><b>Dataset</b></td><td>{{ result.dataset }}</td></tr>
+    <tr><td><b>Mulai</b></td><td>{{ result.started_at }}</td></tr>
+    <tr><td><b>Selesai</b></td><td>{{ result.finished_at }}</td></tr>
+    <tr><td><b>Exit code</b></td><td>{{ result.exit_code }}</td></tr>
+  </table>
+
+  {% if result.summary and result.summary.total %}
+  <h3 style="margin-top:16px">Ringkasan</h3>
+  <table cellpadding="6" cellspacing="0" border="1" style="border-collapse:collapse">
+    <tr style="background:#f3f3f3">
+      <th>pass</th><th>fail</th><th>blocking</th><th>warning</th>
+    </tr>
+    <tr>
+      <td align="center">{{ result.summary.total.pass }}</td>
+      <td align="center">{{ result.summary.total.fail }}</td>
+      <td align="center"><b style="color:#b00">{{ result.summary.total.fail_blocking }}</b></td>
+      <td align="center">{{ result.summary.total.fail_warning }}</td>
+    </tr>
+  </table>
+  {% endif %}
+
+  {% if result.summary and result.summary.blocking %}
+  <h3 style="margin-top:16px;color:#b00">Kegagalan Blocking</h3>
+  <ul>
+    {% for b in result.summary.blocking %}
+      <li>
+        <b>{{ b.category }}</b> — {{ b.description }}<br>
+        <small>observasi={{ b.observed }}, menyimpang={{ b.unexpected_count }}</small>
+      </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if result.error %}
+  <h3 style="margin-top:16px;color:#b00">Error</h3>
+  <pre style="background:#fee;padding:8px">{{ result.error }}</pre>
+  {% endif %}
+
+  <p style="color:#777;margin-top:24px;font-size:12px">
+    Email otomatis dari DQ Service. Lampiran: report JSON & Markdown.
+  </p>
+</body></html>

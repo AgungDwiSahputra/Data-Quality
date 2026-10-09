@@ -32,6 +32,7 @@
 # ---------------------------------------------------------------------------
 datasets.yml
 bronze_datasets.yml
+bronze_data_validation.yml
 
 # ---------------------------------------------------------------------------
 # Laporan hasil validasi — dibuat ulang setiap kali validate.py dijalankan.
@@ -84,3 +85,7 @@ Thumbs.db
 CLAUDE.md
 
 gx/
+
+docs/
+gx*
+profiles/

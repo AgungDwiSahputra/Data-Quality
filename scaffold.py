@@ -230,9 +230,16 @@ def analisis(nama: str, pertama: pd.DataFrame, frames: list[pd.DataFrame],
     # ---- kandidat urutan waktu ----
     urutan = []
     if waktu and muat:
-        selisih = pd.to_datetime(gabung[muat]) - pd.to_datetime(gabung[waktu])
-        if (selisih.dt.total_seconds() >= 0).all():
-            urutan.append((muat, waktu))
+        try:
+            selisih = pd.to_datetime(gabung[muat]) - pd.to_datetime(gabung[waktu])
+            if (selisih.dt.total_seconds() >= 0).all():
+                urutan.append((muat, waktu))
+        except TypeError:
+            # Satu kolom tz-aware, satu tz-naive (mis. kolom audit '_ingested_at' yang
+            # dibubuhkan exporter.py berzona UTC, dibandingkan kolom SQL Server asli yang
+            # naive) -- ini cuma tebakan heuristik (TEBAKAN), bukan hasil yang wajib benar,
+            # jadi dilewati saja daripada membuat seluruh scaffold gagal.
+            pass
 
     # ---- kandidat flag DQ boolean ----
     flag = []

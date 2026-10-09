@@ -2,30 +2,24 @@
  "_meta": {
   "dataset": "ars",
   "deskripsi": "Automatic Rainfall Station — curah hujan per jam per blok",
-  "dibuat_pada": "2026-07-31T10:46:15.736698+00:00",
-  "partisi_dipakai": 4,
+  "dibuat_pada": "2026-09-01T08:00:05.533441+00:00",
+  "partisi_dipakai": 8,
   "partisi_dikecualikan": [
-   "recorded_year=2026/recorded_month=07/recorded_day=30/part-0000.parquet"
+   "data_ars/recorded_year=2026/recorded_month=08/recorded_day=31/part-00001-a2230b78-4c8d-4e70-b220-1d34e882abe4.c000.zstd.parquet"
   ],
   "PERINGATAN": "Daftar kode di blok 'master' adalah UNION data historis, BUKAN master resmi. Untuk gerbang produksi, ganti dengan hasil query ke tabel master yang sebenarnya."
  },
  "volume": {
-  "baris_min": 792,
-  "baris_max": 793,
-  "baris_median": 792,
-  "baris_batas_bawah": 673,
-  "baris_batas_atas": 910,
-  "entitas_min": 33,
+  "baris_min": 176,
+  "baris_max": 631,
+  "baris_median": 246,
+  "baris_batas_bawah": 209,
+  "baris_batas_atas": 282,
+  "entitas_min": 13,
   "entitas_max": 33,
   "periode_per_partisi": null
  },
  "missingness": {
-  "gold_id": {
-   "null_rate_min": 0.0,
-   "null_rate_max": 0.0,
-   "null_rate_mean": 0.0,
-   "min_proporsi_terisi": 1.0
-  },
   "device_id": {
    "null_rate_min": 0.0,
    "null_rate_max": 0.0,
@@ -117,10 +111,10 @@
    "min_proporsi_terisi": 1.0
   },
   "rainfall_mm": {
-   "null_rate_min": 0.029003783102143757,
-   "null_rate_max": 0.03535353535353535,
-   "null_rate_mean": 0.032187814462404624,
-   "min_proporsi_terisi": 0.9146
+   "null_rate_min": 0.0,
+   "null_rate_max": 0.7115384615384616,
+   "null_rate_mean": 0.2861474895943993,
+   "min_proporsi_terisi": 0.2385
   },
   "rainfall_source": {
    "null_rate_min": 0.0,
@@ -149,20 +143,20 @@
  },
  "distribusi": {
   "rainfall_mm": {
-   "n": 3067,
-   "mean_global": 0.07815454841865015,
-   "stdev_global": 1.093221900090722,
-   "mean_per_partisi_min": 0.0015686274509803923,
-   "mean_per_partisi_max": 0.1518324607329843,
-   "stdev_per_partisi_max": 1.683422185505795,
-   "zero_rate_min": 0.9583333333333334,
-   "zero_rate_max": 0.9934640522875817,
+   "n": 1512,
+   "mean_global": 0.02037037037037037,
+   "stdev_global": 0.3832579227003158,
+   "mean_per_partisi_min": 0.0,
+   "mean_per_partisi_max": 0.10769230769230768,
+   "stdev_per_partisi_max": 1.0929575531637774,
+   "zero_rate_min": 0.9602272727272727,
+   "zero_rate_max": 1.0,
    "kuantil": {
     "0.5": 0.0,
     "0.75": 0.0,
     "0.9": 0.0,
     "0.95": 0.0,
-    "0.99": 0.6
+    "0.99": 0.2
    },
    "kuantil_per_partisi": {
     "0.5": {
@@ -179,12 +173,12 @@
     },
     "0.99": {
      "min": 0.0,
-     "max": 1.6
+     "max": 0.2
     }
    },
    "mean_batas_bawah": 0.0,
-   "mean_batas_atas": 0.455497,
-   "stdev_batas_atas": 3.366844,
+   "mean_batas_atas": 0.323077,
+   "stdev_batas_atas": 2.185915,
    "kl_partisi": {
     "bins": [
      0.0,
@@ -198,13 +192,13 @@
      150.0
     ],
     "weights": [
-     0.97098141506358,
-     0.018584936419954352,
-     0.0032605151613955006,
-     0.0022823606129768505,
-     0.0022823606129768505,
-     0.0019563090968373,
-     0.0006521030322791001,
+     0.9854497354497355,
+     0.011243386243386243,
+     0.0006613756613756613,
+     0.0013227513227513227,
+     0.0006613756613756613,
+     0.0006613756613756613,
+     0.0,
      0.0
     ]
    }
@@ -222,7 +216,7 @@
    "sumber_pola": "diturunkan otomatis",
    "panjang_min": 6,
    "panjang_max": 27,
-   "n_unik": 33
+   "n_unik": 34
   },
   "vendor": {
    "pola": [
@@ -289,7 +283,7 @@
    "sumber_pola": "diturunkan otomatis",
    "panjang_min": 3,
    "panjang_max": 4,
-   "n_unik": 30
+   "n_unik": 31
   },
   "est_new_code": {
    "pola": [
@@ -299,7 +293,7 @@
    "sumber_pola": "diturunkan otomatis",
    "panjang_min": 3,
    "panjang_max": 5,
-   "n_unik": 30
+   "n_unik": 31
   },
   "est_code_sap": {
    "pola": [
@@ -308,7 +302,7 @@
    "sumber_pola": "diturunkan otomatis",
    "panjang_min": 4,
    "panjang_max": 4,
-   "n_unik": 30
+   "n_unik": 31
   },
   "block_gis": {
    "pola": [
@@ -320,7 +314,7 @@
    "sumber_pola": "diturunkan otomatis",
    "panjang_min": 2,
    "panjang_max": 5,
-   "n_unik": 33
+   "n_unik": 34
   },
   "block_sap": {
    "pola": [
@@ -330,7 +324,7 @@
    "sumber_pola": "diturunkan otomatis",
    "panjang_min": 2,
    "panjang_max": 3,
-   "n_unik": 32
+   "n_unik": 33
   },
   "rainfall_source": {
    "pola": [
@@ -367,6 +361,7 @@
    "MTI-1SOPVHR4599L",
    "MTI-28JX76Y0381Y",
    "MTI-51IGYAYZXXLX",
+   "MTI-5UR5Y4H32MCS",
    "MTI-6PVHSL0KBVSR",
    "MTI-7SOPRVRTOGPX",
    "MTI-7U1CE7K12ZVM",
@@ -438,6 +433,7 @@
    "MER",
    "MHO",
    "NAS",
+   "NYA",
    "PUL",
    "RAM",
    "SEG",
@@ -466,6 +462,7 @@
    "THP10",
    "THP11",
    "THP12",
+   "THP13",
    "THP14",
    "THP18",
    "THP19",
@@ -506,6 +503,7 @@
    "TH3J",
    "TH3K",
    "TH3L",
+   "TH3M",
    "TH3N",
    "TH3R",
    "TH3S",
@@ -523,6 +521,7 @@
    "40-09",
    "43-32",
    "44-08",
+   "46-24",
    "50-03",
    "57-03",
    "58-08",
@@ -565,6 +564,7 @@
    "196",
    "246",
    "251",
+   "308",
    "316",
    "367",
    "440",
@@ -686,6 +686,10 @@
    [
     "NAS",
     "THP7"
+   ],
+   [
+    "NYA",
+    "THP13"
    ],
    [
     "PUL",
@@ -810,6 +814,10 @@
     "TH3G"
    ],
    [
+    "NYA",
+    "TH3M"
+   ],
+   [
     "PUL",
     "TH3J"
    ],
@@ -929,6 +937,10 @@
    ],
    [
     "NAS",
+    "PT.THIP"
+   ],
+   [
+    "NYA",
     "PT.THIP"
    ],
    [
@@ -1052,6 +1064,10 @@
    [
     "NAS",
     "Region 1 THIP"
+   ],
+   [
+    "NYA",
+    "Region 2 THIP"
    ],
    [
     "PUL",
@@ -1210,6 +1226,10 @@
     "SEN"
    ],
    [
+    "MTI-5UR5Y4H32MCS",
+    "NYA"
+   ],
+   [
     "MTI-6PVHSL0KBVSR",
     "MAG"
    ],
@@ -1344,6 +1364,10 @@
     "18"
    ],
    [
+    "MTI-5UR5Y4H32MCS",
+    "46-24"
+   ],
+   [
     "MTI-6PVHSL0KBVSR",
     "60-24"
    ],
@@ -1424,6 +1448,10 @@
    [
     "44-08",
     "367"
+   ],
+   [
+    "46-24",
+    "308"
    ],
    [
     "50-03",
@@ -1526,24 +1554,44 @@
  },
  "per_partisi": [
   {
-   "partisi": "recorded_year=2026/recorded_month=07/recorded_day=26/part-0000.parquet",
-   "baris": 792,
-   "tanggal": "2026-07-26T00:00:00"
+   "partisi": "data_ars/recorded_year=2026/recorded_month=08/recorded_day=23/part-00000-16939624-51f0-4c2e-bb52-7bc538de26f3.c000.zstd.parquet",
+   "baris": 631,
+   "tanggal": "2026-08-23T00:00:00"
   },
   {
-   "partisi": "recorded_year=2026/recorded_month=07/recorded_day=27/part-0000.parquet",
-   "baris": 792,
-   "tanggal": "2026-07-27T00:00:00"
+   "partisi": "data_ars/recorded_year=2026/recorded_month=08/recorded_day=28/part-00000-c699f2b2-ac4d-440a-b3b4-f230f6c99888.c000.zstd.parquet",
+   "baris": 180,
+   "tanggal": "2026-08-28T00:00:00"
   },
   {
-   "partisi": "recorded_year=2026/recorded_month=07/recorded_day=28/part-0000.parquet",
-   "baris": 793,
-   "tanggal": "2026-07-28T00:00:00"
+   "partisi": "data_ars/recorded_year=2026/recorded_month=08/recorded_day=28/part-00001-c699f2b2-ac4d-440a-b3b4-f230f6c99888.c000.zstd.parquet",
+   "baris": 312,
+   "tanggal": "2026-08-28T00:00:00"
   },
   {
-   "partisi": "recorded_year=2026/recorded_month=07/recorded_day=29/part-0000.parquet",
-   "baris": 792,
-   "tanggal": "2026-07-29T00:00:00"
+   "partisi": "data_ars/recorded_year=2026/recorded_month=08/recorded_day=29/part-00000-21daa1fe-77eb-49cb-b5b8-e7267fb2f9da.c000.zstd.parquet",
+   "baris": 180,
+   "tanggal": "2026-08-29T00:00:00"
+  },
+  {
+   "partisi": "data_ars/recorded_year=2026/recorded_month=08/recorded_day=29/part-00001-21daa1fe-77eb-49cb-b5b8-e7267fb2f9da.c000.zstd.parquet",
+   "baris": 312,
+   "tanggal": "2026-08-29T00:00:00"
+  },
+  {
+   "partisi": "data_ars/recorded_year=2026/recorded_month=08/recorded_day=30/part-00000-b599a139-8f7f-4514-a482-4263d0bac479.c000.zstd.parquet",
+   "baris": 176,
+   "tanggal": "2026-08-30T00:00:00"
+  },
+  {
+   "partisi": "data_ars/recorded_year=2026/recorded_month=08/recorded_day=30/part-00001-b599a139-8f7f-4514-a482-4263d0bac479.c000.zstd.parquet",
+   "baris": 336,
+   "tanggal": "2026-08-30T00:00:00"
+  },
+  {
+   "partisi": "data_ars/recorded_year=2026/recorded_month=08/recorded_day=31/part-00000-a2230b78-4c8d-4e70-b220-1d34e882abe4.c000.zstd.parquet",
+   "baris": 180,
+   "tanggal": "2026-08-31T00:00:00"
   }
  ]
 }

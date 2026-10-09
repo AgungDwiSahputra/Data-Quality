@@ -41,6 +41,19 @@ import pandas as pd
 import great_expectations as gx
 import great_expectations.expectations as gxe
 
+# Kolom waktu yang tersimpan sebagai epoch integer (bukan string/datetime)
+# butuh 'unit' eksplisit di pd.to_datetime() -- tanpa ini, integer epoch
+# MILLISECONDS (mis. Date BIGINT ~1.7e12 dari SQL Server) salah tafsir sebagai
+# NANOSECONDS (default pandas utk input integer), mendarat di tahun 1970.
+# Token Indonesia divalidasi di spec.py (SATUAN_WAKTU_VALID); pemetaan ke kode
+# unit pandas ada di sini, sama alasannya dengan type_tokens() di atas.
+SATUAN_WAKTU_KE_UNIT = {
+    "detik": "s",
+    "milidetik": "ms",
+    "mikrodetik": "us",
+    "nanodetik": "ns",
+}
+
 CATEGORIES = [
     "1. SCHEMA", "2. VOLUME", "3. FRESHNESS", "4. MISSINGNESS",
     "5. UNIQUENESS", "6. INTEGRITY", "7. DISTRIBUTION",
@@ -64,18 +77,43 @@ POLA_KOTOR: list[tuple[str, str, str]] = [
 ]
 
 
-def type_tokens() -> dict[str, str]:
+def type_tokens() -> dict[str, str | list[str]]:
     """
     Petakan tipe logis di datasets.yml -> token dtype yang dimengerti GX pada
     versi pandas yang sedang berjalan. pandas >= 3 melaporkan kolom string
     sebagai 'str', pandas 2.x sebagai 'object'.
+
+    Tipe yang SAH secara fisik punya beberapa lebar bit/representasi
+    (integer, float, datetime) dipetakan ke LIST kandidat, dicek lewat
+    ExpectColumnValuesToBeInTypeList di check_schema() -- parquet sah-sah
+    saja ditulis sebagai int32/float32 (bukan cuma int64/float64) tergantung
+    tool penulisnya (Spark/Pandas/dst), dan itu BUKAN pelanggaran schema
+    evolution, nilainya tetap "integer"/"float" secara logis. Token tunggal
+    dulu membuat kolom int32/float32 yang sah SELALU gagal Dimensi 1
+    (ditemukan di silver_ars_transactions kolom 'value' float32, lalu
+    silver_pzo_tmat_measurement 4 kolom Week* int32 -- 2026-09-09). Kolom
+    parquet bertipe DATE (bukan TIMESTAMP) juga masuk kategori ini: pandas
+    membacanya sbg dtype 'object' berisi objek datetime.date asli, dikenali
+    GX lewat nama tipe per-value 'date', BUKAN 'datetime64[us]'.
+
+    Tipe LAIN (string, boolean, decimal) TETAP token tunggal, dicek lewat
+    ExpectColumnValuesToBeOfType seperti semula -- dikonfirmasi langsung
+    (2026-09-09) ExpectColumnValuesToBeInTypeList TIDAK cocok dipakai utk
+    'str'/'object': gagal walau type_list=['str'] persis sama dgn
+    observed_value 'str' yang dilaporkannya sendiri (kemungkinan besar bug/
+    ketidakcocokan versi GX 1.19 dgn dtype 'str' baru pandas 3.x -- akar
+    masalahnya di metode _pandas ColumnValuesInTypeList yang selalu
+    isinstance() per-nilai, bukan cocok dgn cara pandas 3.x membungkus
+    ArrowStringArray). 'string'/'boolean'/'decimal' toh tidak pernah
+    butuh lebih dari satu token sah, jadi tidak ada kerugian tetap pakai
+    OfType utk ketiganya.
     """
     token_str = "str" if str(pd.Series([""], dtype=str).dtype) == "str" else "object"
     return {
-        "integer": "int64",
-        "float": "float64",
+        "integer": ["int64", "int32", "int16", "int8"],
+        "float": ["float64", "float32", "float16"],
         "string": token_str,
-        "datetime": "datetime64[us]",
+        "datetime": ["datetime64[us]", "datetime64[ns]", "datetime64[ms]", "datetime64[s]", "date"],
         "boolean": "bool",
         # decimal128 dari parquet tidak punya dtype numerik native di pandas.
         "decimal": "object",
@@ -171,10 +209,33 @@ def siapkan(spec, df_raw: pd.DataFrame, partisi=None) -> pd.DataFrame:
             df[f"_num_{kol.nama}"] = pd.to_numeric(df[kol.nama], errors="coerce")
 
     if spec.kolom_waktu and spec.kolom_waktu in df.columns:
-        waktu = pd.to_datetime(df[spec.kolom_waktu])
+        unit = SATUAN_WAKTU_KE_UNIT.get(spec.satuan_waktu)
+        waktu = pd.to_datetime(df[spec.kolom_waktu], unit=unit)
+        if unit:
+            # check_freshness() (dimensi 3) membandingkan kolom ini APA ADANYA
+            # (ExpectColumnValuesToBeBetween(column=spec.kolom_waktu, ...)) --
+            # kolom mentahnya masih epoch integer, jadi harus ditimpa di sini
+            # dengan hasil konversi, bukan cuma dipakai lokal untuk _lag_hari
+            # dkk. Aman: batch 'raw' (dimensi 1 SCHEMA) memakai df_raw yang
+            # tidak disentuh siapkan(), jadi kontrak tipe 'integer' di YAML
+            # tetap diperiksa apa adanya.
+            df[spec.kolom_waktu] = waktu
         if spec.kolom_muat and spec.kolom_muat in df.columns:
-            df["_lag_hari"] = (pd.to_datetime(df[spec.kolom_muat]) - waktu
-                               ).dt.total_seconds() / 86400.0
+            waktu_muat = pd.to_datetime(df[spec.kolom_muat])
+            # '_ingested_at' dibubuhkan exporter.py berzona UTC (tz-aware),
+            # sedangkan kolom_waktu dari SQL Server (atau epoch yang baru
+            # dikonversi di atas) biasanya tz-naive -- pengurangan langsung
+            # antar keduanya crash TypeError ("tz-naive vs tz-aware"). Sama
+            # persis dengan yang sudah ditemukan scaffold.py (lihat komentar
+            # di sana); di sini tidak bisa cuma di-skip try/except karena
+            # _lag_hari WAJIB ada untuk dimensi 3. Buang tzinfo dari sisi
+            # mana pun yang tz-aware -- aman krn tz_localize(None) pada
+            # series tz-aware mengonversi ke instant UTC dulu baru membuang
+            # tz-nya, bukan cuma mencopot tz apa adanya.
+            if waktu_muat.dt.tz is not None:
+                waktu_muat = waktu_muat.dt.tz_localize(None)
+            waktu_naive = waktu.dt.tz_localize(None) if waktu.dt.tz is not None else waktu
+            df["_lag_hari"] = (waktu_muat - waktu_naive).dt.total_seconds() / 86400.0
         if spec.granularitas == "jam":
             df["_periode"] = waktu.dt.hour
             df["_offgrid_detik"] = (waktu.dt.minute * 60 + waktu.dt.second
@@ -253,8 +314,15 @@ def check_schema(r: Runner, spec):
                     "asing yang muncul tanpa sepengetahuan pipeline hilir.")
 
     for k in spec.kolom:
-        r.check(cat, f"Tipe {k.nama} = {k.tipe} ({token[k.tipe]})",
-                gxe.ExpectColumnValuesToBeOfType(column=k.nama, type_=token[k.tipe]),
+        tok = token[k.tipe]
+        if isinstance(tok, list):
+            label = "/".join(tok)
+            exp = gxe.ExpectColumnValuesToBeInTypeList(column=k.nama, type_list=tok)
+        else:
+            label = tok
+            exp = gxe.ExpectColumnValuesToBeOfType(column=k.nama, type_=tok)
+        r.check(cat, f"Tipe {k.nama} = {k.tipe} ({label})",
+                exp,
                 raw=True,
                 catatan="Pelanggaran schema evolution paling berbahaya: kolom yang "
                         "namanya tetap sama tapi tipenya bergeser (mis. INT di "
@@ -418,6 +486,18 @@ def check_missingness(r: Runner, spec, prof):
 # 5. UNIQUENESS
 # ---------------------------------------------------------------------------
 
+def _unik_expectation(kolom: list[str]):
+    """
+    GX's ExpectCompoundColumnsToBeUnique mewajibkan minimal 2 kolom (error
+    pydantic kalau 1) -- kunci.bisnis/kunci.surrogate+bisnis gabungan bisa saja
+    cuma 1 kolom (mis. transaction_id tunggal), jadi harus jatuh ke
+    ExpectColumnValuesToBeUnique biasa utk kasus itu.
+    """
+    if len(kolom) == 1:
+        return gxe.ExpectColumnValuesToBeUnique(column=kolom[0])
+    return gxe.ExpectCompoundColumnsToBeUnique(column_list=kolom)
+
+
 def check_uniqueness(r: Runner, spec, df):
     cat = "5. UNIQUENESS"
 
@@ -434,7 +514,7 @@ def check_uniqueness(r: Runner, spec, df):
 
     if spec.business_key:
         r.check(cat, f"Kunci bisnis ({' + '.join(spec.business_key)}) unik",
-                gxe.ExpectCompoundColumnsToBeUnique(column_list=spec.business_key),
+                _unik_expectation(spec.business_key),
                 catatan="Ini duplikat yang sesungguhnya berbahaya. Surrogate key selalu "
                         "unik karena di-generate baru; entitas yang melapor dua kali "
                         "untuk periode sama akan menggandakan nilai saat agregasi.")
@@ -443,7 +523,7 @@ def check_uniqueness(r: Runner, spec, df):
             kunci = [k for k in spec.business_key if k != spec.kolom_waktu] + ["_periode_floor"]
             r.check(cat,
                     f"Satu {kunci[0]} hanya punya SATU pembacaan per {spec.granularitas}",
-                    gxe.ExpectCompoundColumnsToBeUnique(column_list=kunci),
+                    _unik_expectation(kunci),
                     severity="warning",
                     catatan=f"Lebih ketat daripada kunci bisnis di atas. Dua baris dengan "
                             f"timestamp berbeda tipis lolos pemeriksaan timestamp mentah "

@@ -1,0 +1,682 @@
+[2026-10-07 14:53:24] 
+[2026-10-07 14:53:24] ==============================================================================
+[2026-10-07 14:53:24] RUN VALIDASI — silver_data_validation.yml
+[2026-10-07 14:53:24] ==============================================================================
+[2026-10-07 14:53:24] config     : /Users/Pooja/Downloads/Great Expectations bronze layer/silver_data_validation.yml
+[2026-10-07 14:53:24] ROOT       : /Users/Pooja/Downloads/Great Expectations bronze layer
+[2026-10-07 14:53:24] log        : /Users/Pooja/Downloads/Great Expectations bronze layer/scheduler/logs/silver_2026-10-07.log
+[2026-10-07 14:53:24] python     : /opt/anaconda3/bin/python
+[2026-10-07 14:53:24] start      : 2026-10-07 14:53:24
+[2026-10-07 14:53:24] opsi       : source=s3  mode=harian  build=YA  reconcile=YA  email=TIDAK
+[2026-10-07 14:53:24] sanity check: semua path OK
+[2026-10-07 14:53:24] Total dataset: 4
+[2026-10-07 14:53:24]     1. silver_ars_transactions
+[2026-10-07 14:53:24]     2. silver_awl_transactions
+[2026-10-07 14:53:24]     3. silver_pzo_tmat_measurement
+[2026-10-07 14:53:24]     4. silver_rs_transactions
+[2026-10-07 14:53:24] 
+[2026-10-07 14:53:24] ==============================================================================
+[2026-10-07 14:53:24] [1/4] DATASET: silver_ars_transactions
+[2026-10-07 14:53:24] ==============================================================================
+[2026-10-07 14:53:24] START build_reference  | dataset=silver_ars_transactions
+[2026-10-07 14:53:24]   $ /opt/anaconda3/bin/python /Users/Pooja/Downloads/Great Expectations bronze layer/build_reference.py --config /Users/Pooja/Downloads/Great Expectations bronze layer/silver_data_validation.yml --source s3 --dataset silver_ars_transactions
+[2026-10-07 14:58:09]     
+[2026-10-07 14:58:09]     === silver_ars_transactions — Silver ARS Transactions -- raw copy dbo.Silver_ARS_Transactions, TANPA join/filter. Window custom 07:00->07:00 hari berikutnya (SAMA dgn idempotency delete sp_ETL_LoadSilver_ARS_Transactions Step 1), BUKAN kalender 00:00-24:00 biasa. ===
+[2026-10-07 14:58:09]       profil ditulis      : /Users/Pooja/Downloads/Great Expectations bronze layer/profiles/silver_ars_transactions.json
+[2026-10-07 14:58:09]     ... (8 baris lainnya)
+[2026-10-07 14:58:09]           device_id            ['^[A-Z]{2}\\d{2}\\-[A-Z]{4}\\d{3}[A-Z]{2}\\-[A-Z]{3}\\-\\d{8}$', '^[A-Z]{3}\\-[A-Z0-9]{12}$', '^[A-Z]{3}\\-[A-Z]{2,10}\\d[A-Z]{1,9}$', '^[A-Z]{3}\\-\\d{1,2}[A-Z]{10,11}$', '^\\d{6,9}$']
+[2026-10-07 14:58:09]           device_name          ['^[A-Z]{2}\\-[A-Z]{3}\\-[A-Z]\\d{2}[A-Z]\\-[A-Z]{2}\\d{3}\\-[A-Z]{2}\\-[A-Z]{3}$', '^[A-Z]{2}\\-[A-Z]{3}\\-[A-Z]\\d{2}\\-[A-Z]{2}\\d{3}\\-[A-Z]{2}\\-[A-Z]{3}\\ $', '^[A-Z]{2}\\-[A-Z]{3}\\-[A-Z]{1,2}\\d{1,3}\\-[A-Z]{2}\\d{3}\\-[A-Z]{2}\\-[A-Z]{3}$', '^[A-Z]{2}\\-[A-Z]{3}\\d\\-[A-Z]\\d{2}\\-[A-Z]{2}\\d{3}\\-[A-Z]{2}\\-[A-Z]{3}$', '^[A-Z]{3}\\-\\d{3}\\-[A-Z]{3}\\d\\-[A-Z][a-z]{5}\\-[A-Z]$', '^[A-Z]{3}\\-\\d{3}\\-[A-Z]{3}\\d\\-[A-Z]\\d{2}[A-Z]$', '^[A-Z]{3}\\-\\d{3}\\-[A-Z]{3}\\d{1,2}\\-\\d{2,4}$', '^[A-Z]{3}\\-\\d{3}\\-[A-Z]{3}\\d{1,2}\\-\\d{3,4}\\-[A-Z]$', '^[A-Z]{3}\\-\\d{3}\\-[A-Z]{3}\\d{2}\\-[A-Z]{3}\\\t$']
+[2026-10-07 14:58:09]           ... dan 13 kolom lain
+[2026-10-07 14:58:09]   build_reference exit code = 0  durasi=4m 44.7s
+[2026-10-07 14:58:09] END   build_reference  | dataset=silver_ars_transactions  exit=0  durasi=4m 44.7s  status=OK
+[2026-10-07 14:58:09] START validate         | dataset=silver_ars_transactions
+[2026-10-07 14:58:09]   $ /opt/anaconda3/bin/python /Users/Pooja/Downloads/Great Expectations bronze layer/validate.py --config /Users/Pooja/Downloads/Great Expectations bronze layer/silver_data_validation.yml --source s3 --dataset silver_ars_transactions --mode harian --no-data-docs --date 2026-10-06 --fallback-latest
+[2026-10-07 14:58:15]     Memuat [s3]: s3://kpn-gis-s3-bucket/datalake/silver/ars/ars_transactions/recorded_year=2026/recorded_month=10/recorded_day=06/part-00000-54d0c295-c969-4cd1-86b6-ae8da1302fe3.c000.zstd.parquet
+[2026-10-07 14:58:15]     
+[2026-10-07 14:58:15]     ====================================================================================================
+[2026-10-07 14:58:15]     HASIL VALIDASI — SILVER_ARS_TRANSACTIONS — 8 DIMENSI KUALITAS DATA
+[2026-10-07 14:58:15]     ====================================================================================================
+[2026-10-07 14:58:15]       Dataset   : silver_ars_transactions  (Silver ARS Transactions -- raw copy dbo.Silver_ARS_Transactions, TANPA join/filter. Window custom 07:00->07:00 hari berikutnya (SAMA dgn idempotency delete sp_ETL_LoadSilver_ARS_Transactions Step 1), BUKAN kalender 00:00-24:00 biasa.)
+[2026-10-07 14:58:15]       [GAGAL] Jumlah baris dalam koridor baseline (563–762, median historis 663)
+[2026-10-07 14:58:15]               observasi : 507
+[2026-10-07 14:58:15]       [ OK  ] Jumlah transaction_id unik dalam rentang baseline (336–912)
+[2026-10-07 14:58:15]     
+[2026-10-07 14:58:15]     3. FRESHNESS  —  0 lolos / 0 gagal / 1 dilewati
+[2026-10-07 14:58:15]     -----------------------------------------------
+[2026-10-07 14:58:15]       [GAGAL] value tidak boleh null
+[2026-10-07 14:58:15]               observasi : 507 baris, 239 menyimpang, None kosong
+[2026-10-07 14:58:15]               menyimpang: 239 baris (47.1400%)
+[2026-10-07 14:58:15]               contoh    : [nan, nan, nan, nan, nan, nan, nan, nan]
+[2026-10-07 14:58:15]       [ OK  ] record_time tidak boleh null
+[2026-10-07 14:58:15]       [ OK  ] is_manual tidak boleh null
+[2026-10-07 14:58:15]       [GAGAL] loaded_at >= record_time (data tidak diproses sebelum terjadi)
+[2026-10-07 14:58:15]               observasi : 507 baris, 154 menyimpang, 0 kosong
+[2026-10-07 14:58:15]               menyimpang: 154 baris (30.3748%)
+[2026-10-07 14:58:15]               contoh    : [(numpy.datetime64('2026-10-06T19:01:50.680509000'), numpy.datetime64('2026-10-07T06:00:00.000000000')), (numpy.datetime64('2026-10-06T19:01:50.680509000'), numpy.datetime64('2026-10-07T05:00:00.000000000')), (numpy.datetime64('2026-10-06T19:01:50.680509000'), numpy.datetime64('2026-10-07T04:00:00.000000000')), (numpy.datetime64('2026-10-06T19:01:50.680509000'), numpy.datetime64('2026-10-07T03:00:00.000000000')), (numpy.datetime64('2026-10-06T19:01:50.680509000'), numpy.datetime64('2026-10-07T02:00:00.000000000')), (numpy.datetime64('2026-10-06T19:01:50.680509000'), numpy.datetime64('2026-10-07T01:00:00.000000000')), (numpy.datetime64('2026-10-06T19:01:50.680509000'), numpy.datetime64('2026-10-07T00:00:00.000000000')), (numpy.datetime64('2026-10-06T19:01:50.680509000'), numpy.datetime64('2026-10-06T23:00:00.000000000'))]
+[2026-10-07 14:58:15]     
+[2026-10-07 14:58:15]     7. DISTRIBUTION  —  0 lolos / 0 gagal / 1 dilewati
+[2026-10-07 14:58:15]       [GAGAL] device_name bebas dari spasi di awal/akhir (padding tak sengaja)
+[2026-10-07 14:58:15]               observasi : 507 baris, 24 menyimpang, 0 kosong
+[2026-10-07 14:58:15]               menyimpang: 24 baris (4.7337%)
+[2026-10-07 14:58:15]               contoh    : ['GN-KBQ-F64-HK074-RF-ARS ', 'GN-KBQ-F64-HK074-RF-ARS ', 'GN-KBQ-F64-HK074-RF-ARS ', 'GN-KBQ-F64-HK074-RF-ARS ', 'GN-KBQ-F64-HK074-RF-ARS ', 'GN-KBQ-F64-HK074-RF-ARS ', 'GN-KBQ-F64-HK074-RF-ARS ', 'GN-KBQ-F64-HK074-RF-ARS ']
+[2026-10-07 14:58:15]       [ OK  ] device_name bebas dari string kosong atau hanya spasi (missing tersembunyi)
+[2026-10-07 14:58:15]       [ OK  ] device_name bebas dari karakter kontrol / non-printable
+[2026-10-07 14:58:15]     VERDIKT: TIDAK LAYAK — ada kegagalan blocking
+[2026-10-07 14:58:15]     ====================================================================================================
+[2026-10-07 14:58:15]     
+[2026-10-07 14:58:15]     Laporan Markdown : /Users/Pooja/Downloads/Great Expectations bronze layer/reports/silver_ars_transactions_validation.md
+[2026-10-07 14:58:15]     Laporan JSON     : /Users/Pooja/Downloads/Great Expectations bronze layer/reports/silver_ars_transactions_validation.json
+[2026-10-07 14:58:15]   validate exit code = 1  durasi=5.6s
+[2026-10-07 14:58:15] END   validate          | dataset=silver_ars_transactions  exit=1  durasi=5.6s  status=GAGAL(1)
+[2026-10-07 14:58:15] DONE  silver_ars_transactions      | build=0  validate=1  status=GAGAL
+[2026-10-07 14:58:15] 
+[2026-10-07 14:58:15] ==============================================================================
+[2026-10-07 14:58:15] [2/4] DATASET: silver_awl_transactions
+[2026-10-07 14:58:15] ==============================================================================
+[2026-10-07 14:58:15] START build_reference  | dataset=silver_awl_transactions
+[2026-10-07 14:58:15]   $ /opt/anaconda3/bin/python /Users/Pooja/Downloads/Great Expectations bronze layer/build_reference.py --config /Users/Pooja/Downloads/Great Expectations bronze layer/silver_data_validation.yml --source s3 --dataset silver_awl_transactions
+[2026-10-07 15:03:24]     
+[2026-10-07 15:03:24]     === silver_awl_transactions — Silver AWL Transactions -- raw copy dbo.Silver_AWL_Transactions, TANPA join/filter. Partisi kalender 00:00-24:00 biasa. ===
+[2026-10-07 15:03:24]       profil ditulis      : /Users/Pooja/Downloads/Great Expectations bronze layer/profiles/silver_awl_transactions.json
+[2026-10-07 15:03:24]     ... (8 baris lainnya)
+[2026-10-07 15:03:24]           DeviceID             ['^[A-Z]{3}\\-[A-Z0-9]{12}$', '^[A-Z]{3}\\-[A-Z]{12}$', '^\\d{3,9}$']
+[2026-10-07 15:03:24]           DeviceName           ['^[A-Z0-9\\-\\.]{21,27}$']
+[2026-10-07 15:03:24]           ... dan 15 kolom lain
+[2026-10-07 15:03:24]   build_reference exit code = 0  durasi=5m 9.5s
+[2026-10-07 15:03:24] END   build_reference  | dataset=silver_awl_transactions  exit=0  durasi=5m 9.5s  status=OK
+[2026-10-07 15:03:24] START validate         | dataset=silver_awl_transactions
+[2026-10-07 15:03:24]   $ /opt/anaconda3/bin/python /Users/Pooja/Downloads/Great Expectations bronze layer/validate.py --config /Users/Pooja/Downloads/Great Expectations bronze layer/silver_data_validation.yml --source s3 --dataset silver_awl_transactions --mode harian --no-data-docs --date 2026-10-06 --fallback-latest
+[2026-10-07 15:03:29]     Memuat [s3]: s3://kpn-gis-s3-bucket/datalake/silver/awl/awl_transactions/recorded_year=2026/recorded_month=10/recorded_day=06/part-00001-65317ede-0079-4440-bd2a-2a17c8cc56e6.c000.zstd.parquet
+[2026-10-07 15:03:29]     
+[2026-10-07 15:03:29]     ====================================================================================================
+[2026-10-07 15:03:29]     HASIL VALIDASI — SILVER_AWL_TRANSACTIONS — 8 DIMENSI KUALITAS DATA
+[2026-10-07 15:03:29]     ====================================================================================================
+[2026-10-07 15:03:29]       Dataset   : silver_awl_transactions  (Silver AWL Transactions -- raw copy dbo.Silver_AWL_Transactions, TANPA join/filter. Partisi kalender 00:00-24:00 biasa.)
+[2026-10-07 15:03:29]       [GAGAL] Jumlah kolom tepat 25
+[2026-10-07 15:03:29]               observasi : 26
+[2026-10-07 15:03:29]       [GAGAL] Tidak ada kolom hilang maupun kolom tak terduga (schema evolution)
+[2026-10-07 15:03:29]               observasi : ['BlockGIS', 'BlockSAP', 'Brand', 'CompanyCode', 'Connectivity', 'DeviceID', 'DeviceName', 'ETL_InsertedAt', 'EstCode', 'EstCodeSAP', 'EstNewCode', 'Grouping', 'IsManual', 'JenisDevice', 'Latitude', 'Longitude', 'Plantation', 'RecordTime', 'SensorCategory', 'SensorID', 'SensorName', 'SensorUnit', 'Source', 'TransactionID', 'Value', 'loaded_at']
+[2026-10-07 15:03:29]       [ OK  ] Tipe Source = string (object)
+[2026-10-07 15:03:29]       [ OK  ] Tipe TransactionID = string (object)
+[2026-10-07 15:03:29]       [ OK  ] Tipe SensorID = string (object)
+[2026-10-07 15:03:29]       [ OK  ] Tipe SensorName = string (object)
+[2026-10-07 15:03:29]       [GAGAL] Jumlah baris dalam koridor baseline (3849–5208, median historis 4529)
+[2026-10-07 15:03:29]               observasi : 3244
+[2026-10-07 15:03:29]       [ OK  ] Jumlah TransactionID unik dalam rentang baseline (3205–21426)
+[2026-10-07 15:03:29]     
+[2026-10-07 15:03:29]     3. FRESHNESS  —  0 lolos / 0 gagal / 1 dilewati
+[2026-10-07 15:03:29]     -----------------------------------------------
+[2026-10-07 15:03:29]       [GAGAL] BlockSAP bukan string kosong / hanya spasi
+[2026-10-07 15:03:29]               observasi : 3244 baris, 88 menyimpang, 0 kosong
+[2026-10-07 15:03:29]               menyimpang: 88 baris (2.7127%)
+[2026-10-07 15:03:29]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:03:29]     
+[2026-10-07 15:03:29]     5. UNIQUENESS  —  1 lolos / 0 gagal
+[2026-10-07 15:03:29]       [GAGAL] loaded_at >= RecordTime (data tidak diproses sebelum terjadi)
+[2026-10-07 15:03:29]               observasi : 3244 baris, 343 menyimpang, 0 kosong
+[2026-10-07 15:03:29]               menyimpang: 343 baris (10.5734%)
+[2026-10-07 15:03:29]               contoh    : [(numpy.datetime64('2026-10-06T19:02:02.265956000'), numpy.datetime64('2026-10-06T21:40:04.000000')), (numpy.datetime64('2026-10-06T19:02:02.265956000'), numpy.datetime64('2026-10-06T21:40:04.000000')), (numpy.datetime64('2026-10-06T19:02:02.265956000'), numpy.datetime64('2026-10-06T21:40:04.000000')), (numpy.datetime64('2026-10-06T19:02:02.265956000'), numpy.datetime64('2026-10-06T21:40:04.000000')), (numpy.datetime64('2026-10-06T19:02:02.265956000'), numpy.datetime64('2026-10-06T20:40:04.000000')), (numpy.datetime64('2026-10-06T19:02:02.265956000'), numpy.datetime64('2026-10-06T20:40:04.000000')), (numpy.datetime64('2026-10-06T19:02:02.265956000'), numpy.datetime64('2026-10-06T20:40:04.000000')), (numpy.datetime64('2026-10-06T19:02:02.265956000'), numpy.datetime64('2026-10-06T20:40:04.000000'))]
+[2026-10-07 15:03:29]     
+[2026-10-07 15:03:29]     7. DISTRIBUTION  —  0 lolos / 0 gagal / 1 dilewati
+[2026-10-07 15:03:29]       [GAGAL] BlockSAP cocok salah satu dari 4 pola yang dikenal
+[2026-10-07 15:03:29]               observasi : 3244 baris, 88 menyimpang, 0 kosong
+[2026-10-07 15:03:29]               menyimpang: 88 baris (2.7127%)
+[2026-10-07 15:03:29]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:03:29]       [ OK  ] Panjang BlockSAP antara 0–8 karakter
+[2026-10-07 15:03:29]       [ OK  ] Source bebas dari spasi di awal/akhir (padding tak sengaja)
+[2026-10-07 15:03:29]       [GAGAL] SensorName bebas dari spasi di awal/akhir (padding tak sengaja)
+[2026-10-07 15:03:29]               observasi : 3244 baris, 69 menyimpang, 0 kosong
+[2026-10-07 15:03:29]               menyimpang: 69 baris (2.1270%)
+[2026-10-07 15:03:29]               contoh    : ['Battery ', 'Battery ', 'Battery ', 'Battery ', 'Battery ', 'Battery ', 'Battery ', 'Battery ']
+[2026-10-07 15:03:29]       [ OK  ] SensorName bebas dari string kosong atau hanya spasi (missing tersembunyi)
+[2026-10-07 15:03:29]       [ OK  ] SensorName bebas dari karakter kontrol / non-printable
+[2026-10-07 15:03:29]       [GAGAL] BlockSAP bebas dari string kosong atau hanya spasi (missing tersembunyi)
+[2026-10-07 15:03:29]               observasi : 3244 baris, 88 menyimpang, 0 kosong
+[2026-10-07 15:03:29]               menyimpang: 88 baris (2.7127%)
+[2026-10-07 15:03:29]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:03:29]       [ OK  ] BlockSAP bebas dari karakter kontrol / non-printable
+[2026-10-07 15:03:29]       [ OK  ] BlockSAP bebas dari penggalan HTML/markup (indikasi kebocoran encoding)
+[2026-10-07 15:03:29]     VERDIKT: TIDAK LAYAK — ada kegagalan blocking
+[2026-10-07 15:03:29]     ====================================================================================================
+[2026-10-07 15:03:29]     
+[2026-10-07 15:03:29]     Laporan Markdown : /Users/Pooja/Downloads/Great Expectations bronze layer/reports/silver_awl_transactions_validation.md
+[2026-10-07 15:03:29]     Laporan JSON     : /Users/Pooja/Downloads/Great Expectations bronze layer/reports/silver_awl_transactions_validation.json
+[2026-10-07 15:03:29]   validate exit code = 1  durasi=4.6s
+[2026-10-07 15:03:29] END   validate          | dataset=silver_awl_transactions  exit=1  durasi=4.6s  status=GAGAL(1)
+[2026-10-07 15:03:29] DONE  silver_awl_transactions      | build=0  validate=1  status=GAGAL
+[2026-10-07 15:03:29] 
+[2026-10-07 15:03:29] ==============================================================================
+[2026-10-07 15:03:29] [3/4] DATASET: silver_pzo_tmat_measurement
+[2026-10-07 15:03:29] ==============================================================================
+[2026-10-07 15:03:29] START build_reference  | dataset=silver_pzo_tmat_measurement
+[2026-10-07 15:03:29]   $ /opt/anaconda3/bin/python /Users/Pooja/Downloads/Great Expectations bronze layer/build_reference.py --config /Users/Pooja/Downloads/Great Expectations bronze layer/silver_data_validation.yml --source s3 --dataset silver_pzo_tmat_measurement
+[2026-10-07 15:05:29]     
+[2026-10-07 15:05:29]     === silver_pzo_tmat_measurement — Silver PZO TMAT Measurement -- pembacaan manual tinggi muka air piezometer per minggu, digabung dgn master plantation/estate/device/indicator. ===
+[2026-10-07 15:05:29]       profil ditulis      : /Users/Pooja/Downloads/Great Expectations bronze layer/profiles/silver_pzo_tmat_measurement.json
+[2026-10-07 15:05:29]     ... (8 baris lainnya)
+[2026-10-07 15:05:29]           CompanyCode          ['^[A-Z]{2}\\.[A-Z]{3,5}$']
+[2026-10-07 15:05:29]           EstCode              ['^[A-Z]{3}$', '^[A-Z]{3}\\d$']
+[2026-10-07 15:05:29]           ... dan 17 kolom lain
+[2026-10-07 15:05:29]   build_reference exit code = 0  durasi=1m 59.8s
+[2026-10-07 15:05:29] END   build_reference  | dataset=silver_pzo_tmat_measurement  exit=0  durasi=1m 59.8s  status=OK
+[2026-10-07 15:05:29] START validate         | dataset=silver_pzo_tmat_measurement
+[2026-10-07 15:05:29]   $ /opt/anaconda3/bin/python /Users/Pooja/Downloads/Great Expectations bronze layer/validate.py --config /Users/Pooja/Downloads/Great Expectations bronze layer/silver_data_validation.yml --source s3 --dataset silver_pzo_tmat_measurement --mode harian --no-data-docs --date 2026-10-06 --fallback-latest
+[2026-10-07 15:05:33]     Memuat [s3]: s3://kpn-gis-s3-bucket/datalake/silver/pzo/tmat_measurement/recorded_year=2026/recorded_month=10/recorded_day=06/part-00000-f0aeab60-c5b5-4597-9ec8-433223a934e4.c000.zstd.parquet
+[2026-10-07 15:05:33]     
+[2026-10-07 15:05:33]     ====================================================================================================
+[2026-10-07 15:05:33]     HASIL VALIDASI — SILVER_PZO_TMAT_MEASUREMENT — 8 DIMENSI KUALITAS DATA
+[2026-10-07 15:05:33]     ====================================================================================================
+[2026-10-07 15:05:33]       Dataset   : silver_pzo_tmat_measurement  (Silver PZO TMAT Measurement -- pembacaan manual tinggi muka air piezometer per minggu, digabung dgn master plantation/estate/device/indicator.)
+[2026-10-07 15:05:33]       [GAGAL] Jumlah baris dalam koridor baseline (236–319, median historis 278)
+[2026-10-07 15:05:33]               observasi : 527
+[2026-10-07 15:05:33]       [ OK  ] Jumlah PieRecordID unik dalam rentang baseline (1–1390)
+[2026-10-07 15:05:33]     
+[2026-10-07 15:05:33]     3. FRESHNESS  —  0 lolos / 0 gagal / 1 dilewati
+[2026-10-07 15:05:33]     -----------------------------------------------
+[2026-10-07 15:05:33]     VERDIKT: TIDAK LAYAK — ada kegagalan blocking
+[2026-10-07 15:05:33]     ====================================================================================================
+[2026-10-07 15:05:33]     
+[2026-10-07 15:05:33]     Laporan Markdown : /Users/Pooja/Downloads/Great Expectations bronze layer/reports/silver_pzo_tmat_measurement_validation.md
+[2026-10-07 15:05:33]     Laporan JSON     : /Users/Pooja/Downloads/Great Expectations bronze layer/reports/silver_pzo_tmat_measurement_validation.json
+[2026-10-07 15:05:33]   validate exit code = 1  durasi=4.5s
+[2026-10-07 15:05:33] END   validate          | dataset=silver_pzo_tmat_measurement  exit=1  durasi=4.5s  status=GAGAL(1)
+[2026-10-07 15:05:33] DONE  silver_pzo_tmat_measurement  | build=0  validate=1  status=GAGAL
+[2026-10-07 15:05:33] 
+[2026-10-07 15:05:33] ==============================================================================
+[2026-10-07 15:05:33] [4/4] DATASET: silver_rs_transactions
+[2026-10-07 15:05:33] ==============================================================================
+[2026-10-07 15:05:33] START build_reference  | dataset=silver_rs_transactions
+[2026-10-07 15:05:33]   $ /opt/anaconda3/bin/python /Users/Pooja/Downloads/Great Expectations bronze layer/build_reference.py --config /Users/Pooja/Downloads/Great Expectations bronze layer/silver_data_validation.yml --source s3 --dataset silver_rs_transactions
+[2026-10-07 15:07:50]     
+[2026-10-07 15:07:50]     === silver_rs_transactions — Silver RS Transactions -- data curah hujan manual per stasiun per periode, digabung dgn master plantation/estate/lokasi. ===
+[2026-10-07 15:07:50]       profil ditulis      : /Users/Pooja/Downloads/Great Expectations bronze layer/profiles/silver_rs_transactions.json
+[2026-10-07 15:07:50]     ... (8 baris lainnya)
+[2026-10-07 15:07:50]           created_name         ['^[A-Z][a-z]{3}\\ [A-Z][a-z]{5}$']
+[2026-10-07 15:07:50]           plantation           ['^[A-Z]{4,8}$']
+[2026-10-07 15:07:50]           ... dan 6 kolom lain
+[2026-10-07 15:07:50]   build_reference exit code = 0  durasi=2m 16.6s
+[2026-10-07 15:07:50] END   build_reference  | dataset=silver_rs_transactions  exit=0  durasi=2m 16.6s  status=OK
+[2026-10-07 15:07:50] START validate         | dataset=silver_rs_transactions
+[2026-10-07 15:07:50]   $ /opt/anaconda3/bin/python /Users/Pooja/Downloads/Great Expectations bronze layer/validate.py --config /Users/Pooja/Downloads/Great Expectations bronze layer/silver_data_validation.yml --source s3 --dataset silver_rs_transactions --mode harian --no-data-docs --date 2026-10-06 --fallback-latest
+[2026-10-07 15:07:53]     Memuat [s3]: s3://kpn-gis-s3-bucket/datalake/silver/rs/rs_transactions/recorded_year=2026/recorded_month=10/recorded_day=06/part-00000-05737ceb-b2d7-4d18-b7bf-e97a6716be88.c000.zstd.parquet
+[2026-10-07 15:07:53]     
+[2026-10-07 15:07:53]     ====================================================================================================
+[2026-10-07 15:07:53]     HASIL VALIDASI — SILVER_RS_TRANSACTIONS — 8 DIMENSI KUALITAS DATA
+[2026-10-07 15:07:53]     ====================================================================================================
+[2026-10-07 15:07:53]       Dataset   : silver_rs_transactions  (Silver RS Transactions -- data curah hujan manual per stasiun per periode, digabung dgn master plantation/estate/lokasi.)
+[2026-10-07 15:07:53]       [GAGAL] station_id_sap bukan string kosong / hanya spasi
+[2026-10-07 15:07:53]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:07:53]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:07:53]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:07:53]       [GAGAL] station_sap bukan string kosong / hanya spasi
+[2026-10-07 15:07:53]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:07:53]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:07:53]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:07:53]       [ OK  ] status bukan string kosong / hanya spasi
+[2026-10-07 15:07:53]       [ OK  ] created_name bukan string kosong / hanya spasi
+[2026-10-07 15:07:53]       [GAGAL] plantation bukan string kosong / hanya spasi
+[2026-10-07 15:07:53]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:07:53]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:07:53]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:07:53]       [GAGAL] grouping bukan string kosong / hanya spasi
+[2026-10-07 15:07:53]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:07:53]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:07:53]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:07:53]       [GAGAL] company_code bukan string kosong / hanya spasi
+[2026-10-07 15:07:53]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:07:53]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:07:53]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:07:53]       [GAGAL] est_code bukan string kosong / hanya spasi
+[2026-10-07 15:07:53]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:07:53]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:07:53]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:07:53]       [ OK  ] est_new_code bukan string kosong / hanya spasi
+[2026-10-07 15:07:53]       [ OK  ] est_code_sap bukan string kosong / hanya spasi
+[2026-10-07 15:07:53]       [GAGAL] station_id_sap cocok salah satu dari 3 pola yang dikenal
+[2026-10-07 15:07:53]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:07:53]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:07:53]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:07:53]       [ OK  ] Panjang station_id_sap antara 0–16 karakter
+[2026-10-07 15:07:53]       [GAGAL] station_sap cocok salah satu dari 3 pola yang dikenal
+[2026-10-07 15:07:53]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:07:53]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:07:53]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:07:53]       [ OK  ] Panjang station_sap antara 0–10 karakter
+[2026-10-07 15:07:53]       [ OK  ] status cocok salah satu dari 2 pola yang dikenal
+[2026-10-07 15:07:53]       [GAGAL] plantation cocok pola yang dikenal
+[2026-10-07 15:07:53]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:07:53]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:07:53]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:07:53]       [ OK  ] Panjang plantation antara 0–8 karakter
+[2026-10-07 15:07:53]       [GAGAL] grouping cocok salah satu dari 5 pola yang dikenal
+[2026-10-07 15:07:53]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:07:53]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:07:53]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:07:53]       [ OK  ] Panjang grouping antara 0–17 karakter
+[2026-10-07 15:07:53]       [GAGAL] company_code cocok pola yang dikenal
+[2026-10-07 15:07:53]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:07:53]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:07:53]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:07:53]       [ OK  ] Panjang company_code antara 0–8 karakter
+[2026-10-07 15:07:53]       [GAGAL] est_code cocok salah satu dari 2 pola yang dikenal
+[2026-10-07 15:07:53]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:07:53]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:07:53]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:07:53]       [ OK  ] Panjang est_code antara 0–4 karakter
+[2026-10-07 15:07:53]       [ OK  ] est_new_code cocok salah satu dari 2 pola yang dikenal
+[2026-10-07 15:07:53]       [GAGAL] station_id_sap bebas dari string kosong atau hanya spasi (missing tersembunyi)
+[2026-10-07 15:07:53]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:07:53]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:07:53]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:07:53]       [ OK  ] station_id_sap bebas dari karakter kontrol / non-printable
+[2026-10-07 15:07:53]       [ OK  ] station_id_sap bebas dari penggalan HTML/markup (indikasi kebocoran encoding)
+[2026-10-07 15:07:53]       [GAGAL] station_sap bebas dari string kosong atau hanya spasi (missing tersembunyi)
+[2026-10-07 15:07:53]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:07:53]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:07:53]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:07:53]       [ OK  ] station_sap bebas dari karakter kontrol / non-printable
+[2026-10-07 15:07:53]       [ OK  ] station_sap bebas dari penggalan HTML/markup (indikasi kebocoran encoding)
+[2026-10-07 15:07:53]       [GAGAL] plantation bebas dari string kosong atau hanya spasi (missing tersembunyi)
+[2026-10-07 15:07:53]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:07:53]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:07:53]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:07:53]       [ OK  ] plantation bebas dari karakter kontrol / non-printable
+[2026-10-07 15:07:53]       [ OK  ] plantation bebas dari penggalan HTML/markup (indikasi kebocoran encoding)
+[2026-10-07 15:07:53]       [GAGAL] grouping bebas dari string kosong atau hanya spasi (missing tersembunyi)
+[2026-10-07 15:07:53]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:07:53]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:07:53]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:07:53]       [ OK  ] grouping bebas dari karakter kontrol / non-printable
+[2026-10-07 15:07:53]       [ OK  ] grouping bebas dari penggalan HTML/markup (indikasi kebocoran encoding)
+[2026-10-07 15:07:53]       [GAGAL] company_code bebas dari string kosong atau hanya spasi (missing tersembunyi)
+[2026-10-07 15:07:53]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:07:53]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:07:53]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:07:53]       [ OK  ] company_code bebas dari karakter kontrol / non-printable
+[2026-10-07 15:07:53]       [ OK  ] company_code bebas dari penggalan HTML/markup (indikasi kebocoran encoding)
+[2026-10-07 15:07:53]       [GAGAL] est_code bebas dari string kosong atau hanya spasi (missing tersembunyi)
+[2026-10-07 15:07:53]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:07:53]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:07:53]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:07:53]       [ OK  ] est_code bebas dari karakter kontrol / non-printable
+[2026-10-07 15:07:53]       [ OK  ] est_code bebas dari penggalan HTML/markup (indikasi kebocoran encoding)
+[2026-10-07 15:07:53]     VERDIKT: TIDAK LAYAK — ada kegagalan blocking
+[2026-10-07 15:07:53]     ====================================================================================================
+[2026-10-07 15:07:53]     
+[2026-10-07 15:07:53]     Laporan Markdown : /Users/Pooja/Downloads/Great Expectations bronze layer/reports/silver_rs_transactions_validation.md
+[2026-10-07 15:07:53]     Laporan JSON     : /Users/Pooja/Downloads/Great Expectations bronze layer/reports/silver_rs_transactions_validation.json
+[2026-10-07 15:07:53]   validate exit code = 1  durasi=3.2s
+[2026-10-07 15:07:53] END   validate          | dataset=silver_rs_transactions  exit=1  durasi=3.2s  status=GAGAL(1)
+[2026-10-07 15:07:53] DONE  silver_rs_transactions       | build=0  validate=1  status=GAGAL
+[2026-10-07 15:07:53] 
+[2026-10-07 15:07:53] ==============================================================================
+[2026-10-07 15:07:53] RINGKASAN VALIDASI
+[2026-10-07 15:07:53] ==============================================================================
+[2026-10-07 15:07:53]   silver_ars_transactions                    build=0  validate=1  durasi_build=  4m 44.7s  durasi_val=      5.6s  → GAGAL
+[2026-10-07 15:07:53]   silver_awl_transactions                    build=0  validate=1  durasi_build=   5m 9.5s  durasi_val=      4.6s  → GAGAL
+[2026-10-07 15:07:53]   silver_pzo_tmat_measurement                build=0  validate=1  durasi_build=  1m 59.8s  durasi_val=      4.5s  → GAGAL
+[2026-10-07 15:07:53]   silver_rs_transactions                     build=0  validate=1  durasi_build=  2m 16.6s  durasi_val=      3.2s  → GAGAL
+[2026-10-07 15:07:53] 
+[2026-10-07 15:07:53] Total dataset       : 4
+[2026-10-07 15:07:53] Lolos               : 0
+[2026-10-07 15:07:53] Gagal blocking      : 4
+[2026-10-07 15:07:53] Total durasi run    : 14m 28.6s
+[2026-10-07 15:07:53] Log lengkap         : /Users/Pooja/Downloads/Great Expectations bronze layer/scheduler/logs/silver_2026-10-07.log
+[2026-10-07 15:07:53] 
+[2026-10-07 15:07:53] ==============================================================================
+[2026-10-07 15:07:53] FILTER UNTUK EMAIL — layer=silver
+[2026-10-07 15:07:53] ==============================================================================
+[2026-10-07 15:07:53] dimensi filter: ['1. SCHEMA', '10. FORMAT & PATTERN COMPLIANCE', '4. MISSINGNESS', '5. UNIQUENESS', '6. INTEGRITY', '8. DATA CLEANLINESS & ENCODING']
+[2026-10-07 15:07:53]   [lampiran] filter dimensi: ['1. SCHEMA', '10. FORMAT & PATTERN COMPLIANCE', '4. MISSINGNESS', '5. UNIQUENESS', '6. INTEGRITY', '8. DATA CLEANLINESS & ENCODING']
+[2026-10-07 15:07:53]   [lampiran] grace=3600s  batas_mtime=13:53:24
+[2026-10-07 15:07:53]   [lampiran] proses silver_ars_transactions (umur 579s)
+[2026-10-07 15:07:53]     [filter] silver_ars_transactions: 6 dimensi terfilter dari 12 dimensi di source
+[2026-10-07 15:07:53]   [lampiran] proses silver_awl_transactions (umur 264s)
+[2026-10-07 15:07:53]     [filter] silver_awl_transactions: 6 dimensi terfilter dari 12 dimensi di source
+[2026-10-07 15:07:53]   [lampiran] proses silver_pzo_tmat_measurement (umur 140s)
+[2026-10-07 15:07:53]     [filter] silver_pzo_tmat_measurement: 6 dimensi terfilter dari 12 dimensi di source
+[2026-10-07 15:07:53]   [lampiran] proses silver_rs_transactions (umur 0s)
+[2026-10-07 15:07:53]     [filter] silver_rs_transactions: 6 dimensi terfilter dari 12 dimensi di source
+[2026-10-07 15:07:53]   [summary] silver: /Users/Pooja/Downloads/Great Expectations bronze layer/reports/_summary_silver_2026-10-07.json
+[2026-10-07 15:07:53] Lampiran JSON siap: 5 file
+[2026-10-07 15:07:53]   - silver_ars_transactions_email_validation.json           (98.8 KB)
+[2026-10-07 15:07:53]   - silver_awl_transactions_email_validation.json           (106.6 KB)
+[2026-10-07 15:07:53]   - silver_pzo_tmat_measurement_email_validation.json       (131.5 KB)
+[2026-10-07 15:07:53]   - silver_rs_transactions_email_validation.json            (73.3 KB)
+[2026-10-07 15:07:53]   - _summary_silver_2026-10-07.json                         (5.6 KB)
+[2026-10-07 15:07:53] 
+[2026-10-07 15:07:53] Status email: 1 lolos, 3 gagal, 0 error (total 4)
+[2026-10-07 15:07:53] 
+[2026-10-07 15:07:53] ==============================================================================
+[2026-10-07 15:07:53] KIRIM EMAIL
+[2026-10-07 15:07:53] ==============================================================================
+[2026-10-07 15:07:53] [mailer] --no-email, skip kirim email.
+[2026-10-07 15:07:53] 
+[2026-10-07 15:07:53] ==============================================================================
+[2026-10-07 15:07:53] SELESAI
+[2026-10-07 15:07:53] ==============================================================================
+[2026-10-07 15:07:53] validasi lengkap : 4 blocking dari 4 dataset (semua 12 dimensi)
+[2026-10-07 15:07:53] filter per-layer : 3 gagal, 0 error (dari 4 dataset, dimensi silver)
+[2026-10-07 15:07:53] exit code        : 1  (mengikuti filter silver)
+[2026-10-07 15:07:53] durasi total     : 14m 28.6s
+[2026-10-07 15:17:13] 
+[2026-10-07 15:17:13] ==============================================================================
+[2026-10-07 15:17:13] RUN VALIDASI — silver_data_validation.yml
+[2026-10-07 15:17:13] ==============================================================================
+[2026-10-07 15:17:13] config     : /Users/Pooja/Downloads/Great Expectations bronze layer/silver_data_validation.yml
+[2026-10-07 15:17:13] ROOT       : /Users/Pooja/Downloads/Great Expectations bronze layer
+[2026-10-07 15:17:13] log        : /Users/Pooja/Downloads/Great Expectations bronze layer/scheduler/logs/silver_2026-10-07.log
+[2026-10-07 15:17:13] python     : /opt/anaconda3/bin/python
+[2026-10-07 15:17:13] start      : 2026-10-07 15:17:13
+[2026-10-07 15:17:13] opsi       : source=s3  mode=harian  build=TIDAK  reconcile=YA  email=TIDAK
+[2026-10-07 15:17:13] sanity check: semua path OK
+[2026-10-07 15:17:13] Total dataset: 4
+[2026-10-07 15:17:13]     1. silver_ars_transactions
+[2026-10-07 15:17:13]     2. silver_awl_transactions
+[2026-10-07 15:17:13]     3. silver_pzo_tmat_measurement
+[2026-10-07 15:17:13]     4. silver_rs_transactions
+[2026-10-07 15:17:13] 
+[2026-10-07 15:17:13] ==============================================================================
+[2026-10-07 15:17:13] [1/4] DATASET: silver_ars_transactions
+[2026-10-07 15:17:13] ==============================================================================
+[2026-10-07 15:17:13] SKIP  build_reference  | dataset=silver_ars_transactions (--no-build)
+[2026-10-07 15:17:13] START validate         | dataset=silver_ars_transactions
+[2026-10-07 15:17:13]   $ /opt/anaconda3/bin/python /Users/Pooja/Downloads/Great Expectations bronze layer/validate.py --config /Users/Pooja/Downloads/Great Expectations bronze layer/silver_data_validation.yml --source s3 --dataset silver_ars_transactions --mode harian --no-data-docs --date 2026-10-06 --fallback-latest
+[2026-10-07 15:17:17]     Memuat [s3]: s3://kpn-gis-s3-bucket/datalake/silver/ars/ars_transactions/recorded_year=2026/recorded_month=10/recorded_day=06/part-00000-54d0c295-c969-4cd1-86b6-ae8da1302fe3.c000.zstd.parquet
+[2026-10-07 15:17:17]     
+[2026-10-07 15:17:17]     ====================================================================================================
+[2026-10-07 15:17:17]     HASIL VALIDASI — SILVER_ARS_TRANSACTIONS — 8 DIMENSI KUALITAS DATA
+[2026-10-07 15:17:17]     ====================================================================================================
+[2026-10-07 15:17:17]       Dataset   : silver_ars_transactions  (Silver ARS Transactions -- raw copy dbo.Silver_ARS_Transactions, TANPA join/filter. Window custom 07:00->07:00 hari berikutnya (SAMA dgn idempotency delete sp_ETL_LoadSilver_ARS_Transactions Step 1), BUKAN kalender 00:00-24:00 biasa.)
+[2026-10-07 15:17:17]       [GAGAL] Jumlah baris dalam koridor baseline (563–762, median historis 663)
+[2026-10-07 15:17:17]               observasi : 507
+[2026-10-07 15:17:17]       [ OK  ] Jumlah transaction_id unik dalam rentang baseline (336–912)
+[2026-10-07 15:17:17]     
+[2026-10-07 15:17:17]     3. FRESHNESS  —  0 lolos / 0 gagal / 1 dilewati
+[2026-10-07 15:17:17]     -----------------------------------------------
+[2026-10-07 15:17:17]       [GAGAL] value tidak boleh null
+[2026-10-07 15:17:17]               observasi : 507 baris, 239 menyimpang, None kosong
+[2026-10-07 15:17:17]               menyimpang: 239 baris (47.1400%)
+[2026-10-07 15:17:17]               contoh    : [nan, nan, nan, nan, nan, nan, nan, nan]
+[2026-10-07 15:17:17]       [ OK  ] record_time tidak boleh null
+[2026-10-07 15:17:17]       [ OK  ] is_manual tidak boleh null
+[2026-10-07 15:17:17]       [GAGAL] loaded_at >= record_time (data tidak diproses sebelum terjadi)
+[2026-10-07 15:17:17]               observasi : 507 baris, 154 menyimpang, 0 kosong
+[2026-10-07 15:17:17]               menyimpang: 154 baris (30.3748%)
+[2026-10-07 15:17:17]               contoh    : [(numpy.datetime64('2026-10-06T19:01:50.680509000'), numpy.datetime64('2026-10-07T06:00:00.000000000')), (numpy.datetime64('2026-10-06T19:01:50.680509000'), numpy.datetime64('2026-10-07T05:00:00.000000000')), (numpy.datetime64('2026-10-06T19:01:50.680509000'), numpy.datetime64('2026-10-07T04:00:00.000000000')), (numpy.datetime64('2026-10-06T19:01:50.680509000'), numpy.datetime64('2026-10-07T03:00:00.000000000')), (numpy.datetime64('2026-10-06T19:01:50.680509000'), numpy.datetime64('2026-10-07T02:00:00.000000000')), (numpy.datetime64('2026-10-06T19:01:50.680509000'), numpy.datetime64('2026-10-07T01:00:00.000000000')), (numpy.datetime64('2026-10-06T19:01:50.680509000'), numpy.datetime64('2026-10-07T00:00:00.000000000')), (numpy.datetime64('2026-10-06T19:01:50.680509000'), numpy.datetime64('2026-10-06T23:00:00.000000000'))]
+[2026-10-07 15:17:17]     
+[2026-10-07 15:17:17]     7. DISTRIBUTION  —  0 lolos / 0 gagal / 1 dilewati
+[2026-10-07 15:17:17]       [GAGAL] device_name bebas dari spasi di awal/akhir (padding tak sengaja)
+[2026-10-07 15:17:17]               observasi : 507 baris, 24 menyimpang, 0 kosong
+[2026-10-07 15:17:17]               menyimpang: 24 baris (4.7337%)
+[2026-10-07 15:17:17]               contoh    : ['GN-KBQ-F64-HK074-RF-ARS ', 'GN-KBQ-F64-HK074-RF-ARS ', 'GN-KBQ-F64-HK074-RF-ARS ', 'GN-KBQ-F64-HK074-RF-ARS ', 'GN-KBQ-F64-HK074-RF-ARS ', 'GN-KBQ-F64-HK074-RF-ARS ', 'GN-KBQ-F64-HK074-RF-ARS ', 'GN-KBQ-F64-HK074-RF-ARS ']
+[2026-10-07 15:17:17]       [ OK  ] device_name bebas dari string kosong atau hanya spasi (missing tersembunyi)
+[2026-10-07 15:17:17]       [ OK  ] device_name bebas dari karakter kontrol / non-printable
+[2026-10-07 15:17:17]     VERDIKT: TIDAK LAYAK — ada kegagalan blocking
+[2026-10-07 15:17:17]     ====================================================================================================
+[2026-10-07 15:17:17]     
+[2026-10-07 15:17:17]     Laporan Markdown : /Users/Pooja/Downloads/Great Expectations bronze layer/reports/silver_ars_transactions_validation.md
+[2026-10-07 15:17:17]     Laporan JSON     : /Users/Pooja/Downloads/Great Expectations bronze layer/reports/silver_ars_transactions_validation.json
+[2026-10-07 15:17:17]   validate exit code = 1  durasi=4.3s
+[2026-10-07 15:17:17] END   validate          | dataset=silver_ars_transactions  exit=1  durasi=4.3s  status=GAGAL(1)
+[2026-10-07 15:17:17] DONE  silver_ars_transactions      | build=0  validate=1  status=GAGAL
+[2026-10-07 15:17:17] 
+[2026-10-07 15:17:17] ==============================================================================
+[2026-10-07 15:17:17] [2/4] DATASET: silver_awl_transactions
+[2026-10-07 15:17:17] ==============================================================================
+[2026-10-07 15:17:17] SKIP  build_reference  | dataset=silver_awl_transactions (--no-build)
+[2026-10-07 15:17:17] START validate         | dataset=silver_awl_transactions
+[2026-10-07 15:17:17]   $ /opt/anaconda3/bin/python /Users/Pooja/Downloads/Great Expectations bronze layer/validate.py --config /Users/Pooja/Downloads/Great Expectations bronze layer/silver_data_validation.yml --source s3 --dataset silver_awl_transactions --mode harian --no-data-docs --date 2026-10-06 --fallback-latest
+[2026-10-07 15:17:22]     Memuat [s3]: s3://kpn-gis-s3-bucket/datalake/silver/awl/awl_transactions/recorded_year=2026/recorded_month=10/recorded_day=06/part-00001-65317ede-0079-4440-bd2a-2a17c8cc56e6.c000.zstd.parquet
+[2026-10-07 15:17:22]     
+[2026-10-07 15:17:22]     ====================================================================================================
+[2026-10-07 15:17:22]     HASIL VALIDASI — SILVER_AWL_TRANSACTIONS — 8 DIMENSI KUALITAS DATA
+[2026-10-07 15:17:22]     ====================================================================================================
+[2026-10-07 15:17:22]       Dataset   : silver_awl_transactions  (Silver AWL Transactions -- raw copy dbo.Silver_AWL_Transactions, TANPA join/filter. Partisi kalender 00:00-24:00 biasa.)
+[2026-10-07 15:17:22]       [GAGAL] Jumlah kolom tepat 25
+[2026-10-07 15:17:22]               observasi : 26
+[2026-10-07 15:17:22]       [GAGAL] Tidak ada kolom hilang maupun kolom tak terduga (schema evolution)
+[2026-10-07 15:17:22]               observasi : ['BlockGIS', 'BlockSAP', 'Brand', 'CompanyCode', 'Connectivity', 'DeviceID', 'DeviceName', 'ETL_InsertedAt', 'EstCode', 'EstCodeSAP', 'EstNewCode', 'Grouping', 'IsManual', 'JenisDevice', 'Latitude', 'Longitude', 'Plantation', 'RecordTime', 'SensorCategory', 'SensorID', 'SensorName', 'SensorUnit', 'Source', 'TransactionID', 'Value', 'loaded_at']
+[2026-10-07 15:17:22]       [ OK  ] Tipe Source = string (object)
+[2026-10-07 15:17:22]       [ OK  ] Tipe TransactionID = string (object)
+[2026-10-07 15:17:22]       [ OK  ] Tipe SensorID = string (object)
+[2026-10-07 15:17:22]       [ OK  ] Tipe SensorName = string (object)
+[2026-10-07 15:17:22]       [GAGAL] Jumlah baris dalam koridor baseline (3849–5208, median historis 4529)
+[2026-10-07 15:17:22]               observasi : 3244
+[2026-10-07 15:17:22]       [ OK  ] Jumlah TransactionID unik dalam rentang baseline (3205–21426)
+[2026-10-07 15:17:22]     
+[2026-10-07 15:17:22]     3. FRESHNESS  —  0 lolos / 0 gagal / 1 dilewati
+[2026-10-07 15:17:22]     -----------------------------------------------
+[2026-10-07 15:17:22]       [GAGAL] BlockSAP bukan string kosong / hanya spasi
+[2026-10-07 15:17:22]               observasi : 3244 baris, 88 menyimpang, 0 kosong
+[2026-10-07 15:17:22]               menyimpang: 88 baris (2.7127%)
+[2026-10-07 15:17:22]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:17:22]     
+[2026-10-07 15:17:22]     5. UNIQUENESS  —  1 lolos / 0 gagal
+[2026-10-07 15:17:22]       [GAGAL] loaded_at >= RecordTime (data tidak diproses sebelum terjadi)
+[2026-10-07 15:17:22]               observasi : 3244 baris, 343 menyimpang, 0 kosong
+[2026-10-07 15:17:22]               menyimpang: 343 baris (10.5734%)
+[2026-10-07 15:17:22]               contoh    : [(numpy.datetime64('2026-10-06T19:02:02.265956000'), numpy.datetime64('2026-10-06T21:40:04.000000')), (numpy.datetime64('2026-10-06T19:02:02.265956000'), numpy.datetime64('2026-10-06T21:40:04.000000')), (numpy.datetime64('2026-10-06T19:02:02.265956000'), numpy.datetime64('2026-10-06T21:40:04.000000')), (numpy.datetime64('2026-10-06T19:02:02.265956000'), numpy.datetime64('2026-10-06T21:40:04.000000')), (numpy.datetime64('2026-10-06T19:02:02.265956000'), numpy.datetime64('2026-10-06T20:40:04.000000')), (numpy.datetime64('2026-10-06T19:02:02.265956000'), numpy.datetime64('2026-10-06T20:40:04.000000')), (numpy.datetime64('2026-10-06T19:02:02.265956000'), numpy.datetime64('2026-10-06T20:40:04.000000')), (numpy.datetime64('2026-10-06T19:02:02.265956000'), numpy.datetime64('2026-10-06T20:40:04.000000'))]
+[2026-10-07 15:17:22]     
+[2026-10-07 15:17:22]     7. DISTRIBUTION  —  0 lolos / 0 gagal / 1 dilewati
+[2026-10-07 15:17:22]       [GAGAL] BlockSAP cocok salah satu dari 4 pola yang dikenal
+[2026-10-07 15:17:22]               observasi : 3244 baris, 88 menyimpang, 0 kosong
+[2026-10-07 15:17:22]               menyimpang: 88 baris (2.7127%)
+[2026-10-07 15:17:22]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:17:22]       [ OK  ] Panjang BlockSAP antara 0–8 karakter
+[2026-10-07 15:17:22]       [ OK  ] Source bebas dari spasi di awal/akhir (padding tak sengaja)
+[2026-10-07 15:17:22]       [GAGAL] SensorName bebas dari spasi di awal/akhir (padding tak sengaja)
+[2026-10-07 15:17:22]               observasi : 3244 baris, 69 menyimpang, 0 kosong
+[2026-10-07 15:17:22]               menyimpang: 69 baris (2.1270%)
+[2026-10-07 15:17:22]               contoh    : ['Battery ', 'Battery ', 'Battery ', 'Battery ', 'Battery ', 'Battery ', 'Battery ', 'Battery ']
+[2026-10-07 15:17:22]       [ OK  ] SensorName bebas dari string kosong atau hanya spasi (missing tersembunyi)
+[2026-10-07 15:17:22]       [ OK  ] SensorName bebas dari karakter kontrol / non-printable
+[2026-10-07 15:17:22]       [GAGAL] BlockSAP bebas dari string kosong atau hanya spasi (missing tersembunyi)
+[2026-10-07 15:17:22]               observasi : 3244 baris, 88 menyimpang, 0 kosong
+[2026-10-07 15:17:22]               menyimpang: 88 baris (2.7127%)
+[2026-10-07 15:17:22]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:17:22]       [ OK  ] BlockSAP bebas dari karakter kontrol / non-printable
+[2026-10-07 15:17:22]       [ OK  ] BlockSAP bebas dari penggalan HTML/markup (indikasi kebocoran encoding)
+[2026-10-07 15:17:22]     VERDIKT: TIDAK LAYAK — ada kegagalan blocking
+[2026-10-07 15:17:22]     ====================================================================================================
+[2026-10-07 15:17:22]     
+[2026-10-07 15:17:22]     Laporan Markdown : /Users/Pooja/Downloads/Great Expectations bronze layer/reports/silver_awl_transactions_validation.md
+[2026-10-07 15:17:22]     Laporan JSON     : /Users/Pooja/Downloads/Great Expectations bronze layer/reports/silver_awl_transactions_validation.json
+[2026-10-07 15:17:22]   validate exit code = 1  durasi=4.1s
+[2026-10-07 15:17:22] END   validate          | dataset=silver_awl_transactions  exit=1  durasi=4.1s  status=GAGAL(1)
+[2026-10-07 15:17:22] DONE  silver_awl_transactions      | build=0  validate=1  status=GAGAL
+[2026-10-07 15:17:22] 
+[2026-10-07 15:17:22] ==============================================================================
+[2026-10-07 15:17:22] [3/4] DATASET: silver_pzo_tmat_measurement
+[2026-10-07 15:17:22] ==============================================================================
+[2026-10-07 15:17:22] SKIP  build_reference  | dataset=silver_pzo_tmat_measurement (--no-build)
+[2026-10-07 15:17:22] START validate         | dataset=silver_pzo_tmat_measurement
+[2026-10-07 15:17:22]   $ /opt/anaconda3/bin/python /Users/Pooja/Downloads/Great Expectations bronze layer/validate.py --config /Users/Pooja/Downloads/Great Expectations bronze layer/silver_data_validation.yml --source s3 --dataset silver_pzo_tmat_measurement --mode harian --no-data-docs --date 2026-10-06 --fallback-latest
+[2026-10-07 15:17:25]     Memuat [s3]: s3://kpn-gis-s3-bucket/datalake/silver/pzo/tmat_measurement/recorded_year=2026/recorded_month=10/recorded_day=06/part-00000-f0aeab60-c5b5-4597-9ec8-433223a934e4.c000.zstd.parquet
+[2026-10-07 15:17:25]     
+[2026-10-07 15:17:25]     ====================================================================================================
+[2026-10-07 15:17:25]     HASIL VALIDASI — SILVER_PZO_TMAT_MEASUREMENT — 8 DIMENSI KUALITAS DATA
+[2026-10-07 15:17:25]     ====================================================================================================
+[2026-10-07 15:17:25]       Dataset   : silver_pzo_tmat_measurement  (Silver PZO TMAT Measurement -- pembacaan manual tinggi muka air piezometer per minggu, digabung dgn master plantation/estate/device/indicator.)
+[2026-10-07 15:17:25]       [GAGAL] Jumlah baris dalam koridor baseline (236–319, median historis 278)
+[2026-10-07 15:17:25]               observasi : 527
+[2026-10-07 15:17:25]       [ OK  ] Jumlah PieRecordID unik dalam rentang baseline (1–1390)
+[2026-10-07 15:17:25]     
+[2026-10-07 15:17:25]     3. FRESHNESS  —  0 lolos / 0 gagal / 1 dilewati
+[2026-10-07 15:17:25]     -----------------------------------------------
+[2026-10-07 15:17:25]     VERDIKT: TIDAK LAYAK — ada kegagalan blocking
+[2026-10-07 15:17:25]     ====================================================================================================
+[2026-10-07 15:17:25]     
+[2026-10-07 15:17:25]     Laporan Markdown : /Users/Pooja/Downloads/Great Expectations bronze layer/reports/silver_pzo_tmat_measurement_validation.md
+[2026-10-07 15:17:25]     Laporan JSON     : /Users/Pooja/Downloads/Great Expectations bronze layer/reports/silver_pzo_tmat_measurement_validation.json
+[2026-10-07 15:17:25]   validate exit code = 1  durasi=3.9s
+[2026-10-07 15:17:25] END   validate          | dataset=silver_pzo_tmat_measurement  exit=1  durasi=3.9s  status=GAGAL(1)
+[2026-10-07 15:17:25] DONE  silver_pzo_tmat_measurement  | build=0  validate=1  status=GAGAL
+[2026-10-07 15:17:25] 
+[2026-10-07 15:17:25] ==============================================================================
+[2026-10-07 15:17:25] [4/4] DATASET: silver_rs_transactions
+[2026-10-07 15:17:25] ==============================================================================
+[2026-10-07 15:17:25] SKIP  build_reference  | dataset=silver_rs_transactions (--no-build)
+[2026-10-07 15:17:25] START validate         | dataset=silver_rs_transactions
+[2026-10-07 15:17:25]   $ /opt/anaconda3/bin/python /Users/Pooja/Downloads/Great Expectations bronze layer/validate.py --config /Users/Pooja/Downloads/Great Expectations bronze layer/silver_data_validation.yml --source s3 --dataset silver_rs_transactions --mode harian --no-data-docs --date 2026-10-06 --fallback-latest
+[2026-10-07 15:17:28]     Memuat [s3]: s3://kpn-gis-s3-bucket/datalake/silver/rs/rs_transactions/recorded_year=2026/recorded_month=10/recorded_day=06/part-00000-05737ceb-b2d7-4d18-b7bf-e97a6716be88.c000.zstd.parquet
+[2026-10-07 15:17:28]     
+[2026-10-07 15:17:28]     ====================================================================================================
+[2026-10-07 15:17:28]     HASIL VALIDASI — SILVER_RS_TRANSACTIONS — 8 DIMENSI KUALITAS DATA
+[2026-10-07 15:17:28]     ====================================================================================================
+[2026-10-07 15:17:28]       Dataset   : silver_rs_transactions  (Silver RS Transactions -- data curah hujan manual per stasiun per periode, digabung dgn master plantation/estate/lokasi.)
+[2026-10-07 15:17:28]       [GAGAL] station_id_sap bukan string kosong / hanya spasi
+[2026-10-07 15:17:28]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:17:28]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:17:28]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:17:28]       [GAGAL] station_sap bukan string kosong / hanya spasi
+[2026-10-07 15:17:28]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:17:28]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:17:28]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:17:28]       [ OK  ] status bukan string kosong / hanya spasi
+[2026-10-07 15:17:28]       [ OK  ] created_name bukan string kosong / hanya spasi
+[2026-10-07 15:17:28]       [GAGAL] plantation bukan string kosong / hanya spasi
+[2026-10-07 15:17:28]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:17:28]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:17:28]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:17:28]       [GAGAL] grouping bukan string kosong / hanya spasi
+[2026-10-07 15:17:28]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:17:28]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:17:28]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:17:28]       [GAGAL] company_code bukan string kosong / hanya spasi
+[2026-10-07 15:17:28]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:17:28]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:17:28]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:17:28]       [GAGAL] est_code bukan string kosong / hanya spasi
+[2026-10-07 15:17:28]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:17:28]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:17:28]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:17:28]       [ OK  ] est_new_code bukan string kosong / hanya spasi
+[2026-10-07 15:17:28]       [ OK  ] est_code_sap bukan string kosong / hanya spasi
+[2026-10-07 15:17:28]       [GAGAL] station_id_sap cocok salah satu dari 3 pola yang dikenal
+[2026-10-07 15:17:28]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:17:28]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:17:28]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:17:28]       [ OK  ] Panjang station_id_sap antara 0–16 karakter
+[2026-10-07 15:17:28]       [GAGAL] station_sap cocok salah satu dari 3 pola yang dikenal
+[2026-10-07 15:17:28]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:17:28]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:17:28]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:17:28]       [ OK  ] Panjang station_sap antara 0–10 karakter
+[2026-10-07 15:17:28]       [ OK  ] status cocok salah satu dari 2 pola yang dikenal
+[2026-10-07 15:17:28]       [GAGAL] plantation cocok pola yang dikenal
+[2026-10-07 15:17:28]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:17:28]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:17:28]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:17:28]       [ OK  ] Panjang plantation antara 0–8 karakter
+[2026-10-07 15:17:28]       [GAGAL] grouping cocok salah satu dari 5 pola yang dikenal
+[2026-10-07 15:17:28]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:17:28]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:17:28]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:17:28]       [ OK  ] Panjang grouping antara 0–17 karakter
+[2026-10-07 15:17:28]       [GAGAL] company_code cocok pola yang dikenal
+[2026-10-07 15:17:28]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:17:28]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:17:28]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:17:28]       [ OK  ] Panjang company_code antara 0–8 karakter
+[2026-10-07 15:17:28]       [GAGAL] est_code cocok salah satu dari 2 pola yang dikenal
+[2026-10-07 15:17:28]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:17:28]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:17:28]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:17:28]       [ OK  ] Panjang est_code antara 0–4 karakter
+[2026-10-07 15:17:28]       [ OK  ] est_new_code cocok salah satu dari 2 pola yang dikenal
+[2026-10-07 15:17:28]       [GAGAL] station_id_sap bebas dari string kosong atau hanya spasi (missing tersembunyi)
+[2026-10-07 15:17:28]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:17:28]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:17:28]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:17:28]       [ OK  ] station_id_sap bebas dari karakter kontrol / non-printable
+[2026-10-07 15:17:28]       [ OK  ] station_id_sap bebas dari penggalan HTML/markup (indikasi kebocoran encoding)
+[2026-10-07 15:17:28]       [GAGAL] station_sap bebas dari string kosong atau hanya spasi (missing tersembunyi)
+[2026-10-07 15:17:28]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:17:28]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:17:28]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:17:28]       [ OK  ] station_sap bebas dari karakter kontrol / non-printable
+[2026-10-07 15:17:28]       [ OK  ] station_sap bebas dari penggalan HTML/markup (indikasi kebocoran encoding)
+[2026-10-07 15:17:28]       [GAGAL] plantation bebas dari string kosong atau hanya spasi (missing tersembunyi)
+[2026-10-07 15:17:28]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:17:28]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:17:28]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:17:28]       [ OK  ] plantation bebas dari karakter kontrol / non-printable
+[2026-10-07 15:17:28]       [ OK  ] plantation bebas dari penggalan HTML/markup (indikasi kebocoran encoding)
+[2026-10-07 15:17:28]       [GAGAL] grouping bebas dari string kosong atau hanya spasi (missing tersembunyi)
+[2026-10-07 15:17:28]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:17:28]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:17:28]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:17:28]       [ OK  ] grouping bebas dari karakter kontrol / non-printable
+[2026-10-07 15:17:28]       [ OK  ] grouping bebas dari penggalan HTML/markup (indikasi kebocoran encoding)
+[2026-10-07 15:17:28]       [GAGAL] company_code bebas dari string kosong atau hanya spasi (missing tersembunyi)
+[2026-10-07 15:17:28]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:17:28]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:17:28]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:17:28]       [ OK  ] company_code bebas dari karakter kontrol / non-printable
+[2026-10-07 15:17:28]       [ OK  ] company_code bebas dari penggalan HTML/markup (indikasi kebocoran encoding)
+[2026-10-07 15:17:28]       [GAGAL] est_code bebas dari string kosong atau hanya spasi (missing tersembunyi)
+[2026-10-07 15:17:28]               observasi : 59 baris, 14 menyimpang, 0 kosong
+[2026-10-07 15:17:28]               menyimpang: 14 baris (23.7288%)
+[2026-10-07 15:17:28]               contoh    : ['', '', '', '', '', '', '', '']
+[2026-10-07 15:17:28]       [ OK  ] est_code bebas dari karakter kontrol / non-printable
+[2026-10-07 15:17:28]       [ OK  ] est_code bebas dari penggalan HTML/markup (indikasi kebocoran encoding)
+[2026-10-07 15:17:28]     VERDIKT: TIDAK LAYAK — ada kegagalan blocking
+[2026-10-07 15:17:28]     ====================================================================================================
+[2026-10-07 15:17:28]     
+[2026-10-07 15:17:28]     Laporan Markdown : /Users/Pooja/Downloads/Great Expectations bronze layer/reports/silver_rs_transactions_validation.md
+[2026-10-07 15:17:28]     Laporan JSON     : /Users/Pooja/Downloads/Great Expectations bronze layer/reports/silver_rs_transactions_validation.json
+[2026-10-07 15:17:28]   validate exit code = 1  durasi=2.8s
+[2026-10-07 15:17:28] END   validate          | dataset=silver_rs_transactions  exit=1  durasi=2.8s  status=GAGAL(1)
+[2026-10-07 15:17:28] DONE  silver_rs_transactions       | build=0  validate=1  status=GAGAL
+[2026-10-07 15:17:28] 
+[2026-10-07 15:17:28] ==============================================================================
+[2026-10-07 15:17:28] RINGKASAN VALIDASI
+[2026-10-07 15:17:28] ==============================================================================
+[2026-10-07 15:17:28]   silver_ars_transactions                    build=0  validate=1  durasi_build=      0.0s  durasi_val=      4.3s  → GAGAL
+[2026-10-07 15:17:28]   silver_awl_transactions                    build=0  validate=1  durasi_build=      0.0s  durasi_val=      4.1s  → GAGAL
+[2026-10-07 15:17:28]   silver_pzo_tmat_measurement                build=0  validate=1  durasi_build=      0.0s  durasi_val=      3.9s  → GAGAL
+[2026-10-07 15:17:28]   silver_rs_transactions                     build=0  validate=1  durasi_build=      0.0s  durasi_val=      2.8s  → GAGAL
+[2026-10-07 15:17:28] 
+[2026-10-07 15:17:28] Total dataset       : 4
+[2026-10-07 15:17:28] Lolos               : 0
+[2026-10-07 15:17:28] Gagal blocking      : 4
+[2026-10-07 15:17:28] Total durasi run    : 15.1s
+[2026-10-07 15:17:28] Log lengkap         : /Users/Pooja/Downloads/Great Expectations bronze layer/scheduler/logs/silver_2026-10-07.log
+[2026-10-07 15:17:28] 
+[2026-10-07 15:17:28] ==============================================================================
+[2026-10-07 15:17:28] FILTER UNTUK EMAIL — layer=silver
+[2026-10-07 15:17:28] ==============================================================================
+[2026-10-07 15:17:28] dimensi filter: ['1. SCHEMA', '10. FORMAT & PATTERN COMPLIANCE', '4. MISSINGNESS', '5. UNIQUENESS', '6. INTEGRITY', '8. DATA CLEANLINESS & ENCODING']
+[2026-10-07 15:17:28]   [lampiran] filter dimensi: ['1. SCHEMA', '10. FORMAT & PATTERN COMPLIANCE', '4. MISSINGNESS', '5. UNIQUENESS', '6. INTEGRITY', '8. DATA CLEANLINESS & ENCODING']
+[2026-10-07 15:17:28]   [lampiran] grace=3600s  batas_mtime=14:17:13
+[2026-10-07 15:17:28]   [lampiran] proses silver_ars_transactions (umur 11s)
+[2026-10-07 15:17:28]     [filter] silver_ars_transactions: 6 dimensi terfilter dari 12 dimensi di source
+[2026-10-07 15:17:28]   [lampiran] proses silver_awl_transactions (umur 7s)
+[2026-10-07 15:17:28]     [filter] silver_awl_transactions: 6 dimensi terfilter dari 12 dimensi di source
+[2026-10-07 15:17:28]   [lampiran] proses silver_pzo_tmat_measurement (umur 3s)
+[2026-10-07 15:17:28]     [filter] silver_pzo_tmat_measurement: 6 dimensi terfilter dari 12 dimensi di source
+[2026-10-07 15:17:28]   [lampiran] proses silver_rs_transactions (umur 0s)
+[2026-10-07 15:17:28]     [filter] silver_rs_transactions: 6 dimensi terfilter dari 12 dimensi di source
+[2026-10-07 15:17:28]   [summary] silver: /Users/Pooja/Downloads/Great Expectations bronze layer/reports/_summary_silver_2026-10-07.json
+[2026-10-07 15:17:28] Lampiran JSON siap: 5 file
+[2026-10-07 15:17:28]   - silver_ars_transactions_email_validation.json           (98.8 KB)
+[2026-10-07 15:17:28]   - silver_awl_transactions_email_validation.json           (106.6 KB)
+[2026-10-07 15:17:28]   - silver_pzo_tmat_measurement_email_validation.json       (131.5 KB)
+[2026-10-07 15:17:28]   - silver_rs_transactions_email_validation.json            (73.3 KB)
+[2026-10-07 15:17:28]   - _summary_silver_2026-10-07.json                         (5.6 KB)
+[2026-10-07 15:17:28] 
+[2026-10-07 15:17:28] Status email: 1 lolos, 3 gagal, 0 error (total 4)
+[2026-10-07 15:17:28] 
+[2026-10-07 15:17:28] ==============================================================================
+[2026-10-07 15:17:28] KIRIM EMAIL
+[2026-10-07 15:17:28] ==============================================================================
+[2026-10-07 15:17:28] [mailer] --no-email, skip kirim email.
+[2026-10-07 15:17:28] 
+[2026-10-07 15:17:28] ==============================================================================
+[2026-10-07 15:17:28] SELESAI
+[2026-10-07 15:17:28] ==============================================================================
+[2026-10-07 15:17:28] validasi lengkap : 4 blocking dari 4 dataset (semua 12 dimensi)
+[2026-10-07 15:17:28] filter per-layer : 3 gagal, 0 error (dari 4 dataset, dimensi silver)
+[2026-10-07 15:17:28] exit code        : 1  (mengikuti filter silver)
+[2026-10-07 15:17:28] durasi total     : 15.2s
